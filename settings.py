@@ -1,9 +1,10 @@
 from glob import glob
 from os.path import dirname, join
-from spritesheet import Spritesheet as Ss
+from spritesheet import SpriteSheet
 import pygame as pg
+from pygame.freetype import SysFont
 
-gtk = pg.time.get_ticks
+
 pg.init()
 # constants:
 BLACK = (0, 0, 0)
@@ -14,10 +15,10 @@ HEIGHT = 600
 FPS = 40
 CAPTION = "Space Shooter"
 # fonts
-aconcepto100 = pg.font.Font(pg.font.match_font("a_Concepto"), 100)
-aconcepto26 = pg.font.Font(pg.font.match_font("a_Concepto"), 26)
-aconcepto20 = pg.font.Font(pg.font.match_font("a_Concepto"), 20)
-aconcepto16 = pg.font.Font(pg.font.match_font("a_Concepto"), 16)
+aconcepto100 = SysFont("a_Concepto", 100)
+aconcepto26 = SysFont("a_Concepto", 26)
+aconcepto20 = SysFont("a_Concepto", 20)
+aconcepto16 = SysFont("a_Concepto", 16)
 # folders:
 GAME_FOLDER = dirname(__file__)
 IMAGES_FOLDER = join(GAME_FOLDER, 'images')
@@ -31,11 +32,11 @@ MUSIC = glob(join(SOUNDS_FOLDER, '*mp3'))
 # clock = pg.time.Clock()
 SCREEN = pg.display.set_mode((WIDTH, HEIGHT), pg.RESIZABLE)
 pg.display.set_caption(CAPTION)
-shipsheet = Ss(join(IMAGES_FOLDER, 'shipsheet.png'))
+shipsheet = SpriteSheet(join(IMAGES_FOLDER, 'shipsheet.png'))
 pg.display.set_icon(shipsheet.get_image(BLACK, [0, 192, 32, 50]))
 # images:
 POWERUPS = glob(join(IMAGES_FOLDER, 'powerups', '*png'))
 mini_ship = shipsheet.get_image(BLACK, [0, 192, 32, 50], (20, 20))
-mini_bomb = Ss(
+mini_bomb = SpriteSheet(
     join(IMAGES_FOLDER, 'powerups', 'spaceMissiles_006.png')).get_image(
         BLACK, size=(15, 25))

@@ -2,15 +2,16 @@
 from math import cos
 from random import choice, randint, random, randrange
 from settings import *
+import pygame as pg
 
 # functions:
+get_ticks = pg.time.get_ticks
 
-def text(screen, msg, center, font, color):
+def write(screen, text, center, font, color):
     '''A function that draws a text on the screen'''
-    textsurf = font.render(msg, False, color, 5)
-    text_pos = textsurf.get_rect()
-    text_pos.center = center
-    screen.blit(textsurf, text_pos)
+    text_rect = font.get_rect(text)
+    text_rect.center = center
+    font.render_to(screen, text_rect, None, color)
 
 
 def get_hit(iterator):
@@ -43,7 +44,7 @@ def get_hit(iterator):
         wait = True
 
 
-def music_player():
+def play_music():
     pg.init()
     global msc
     if not pg.mixer.music.get_busy():
@@ -79,11 +80,11 @@ class Player(pg.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
         self.frame = 0
-        self.missile = Ss(self.guns[1])
-        self.image = shipsheet.get_image(BLACK, [
+        self.missile = SpriteSheet(self.guns[1])
+        self.image = shipsheet.get_image(BLACK, (
             self.ship_imgs['x'][self.frame], self.ship_imgs['y'],
             self.ship_imgs['width'][self.frame], self.ship_imgs['height']
-        ], (40, 63))
+        ), (40, 63))
         self.rect = self.image.get_rect()
         self.rect.bottom = HEIGHT - 10
         self.rect.centerx = WIDTH / 2
@@ -96,14 +97,14 @@ class Player(pg.sprite.Sprite):
         self.hidden = False
         self.flip = False
         self.hold_fire = True
-        self.shoot_time = gtk()
+        self.shoot_time = get_ticks()
         self.missile_time = self.shoot_time
         self.pwr_time = self.shoot_time
         self.strive = self.shoot_time
         self.hide_time = self.shoot_time
 
     def update(self):
-        if self.hidden and gtk() - self.hide_time > 1500:
+        if self.hidden and get_ticks() - self.hide_time > 1500:
             self.hidden = False
             self.rect.centerx = WIDTH / 2
             self.rect.bottom = HEIGHT - 10
@@ -121,8 +122,8 @@ class Player(pg.sprite.Sprite):
             self.rect.x += step
             self.flip = True
         if key_state[pg.K_RIGHT] or key_state[pg.K_LEFT]:
-            if gtk() - self.strive > 100:
-                self.strive = gtk()
+            if get_ticks() - self.strive > 100:
+                self.strive = get_ticks()
                 self.frame += 1
                 if self.frame == 4:
                     self.frame = 3
@@ -142,14 +143,14 @@ class Player(pg.sprite.Sprite):
             self.rect.bottom = HEIGHT
         if self.rect.top <= 0:
             self.rect.top = 0
-        self.image = shipsheet.get_image(BLACK, [
+        self.image = shipsheet.get_image(BLACK, (
             self.ship_imgs['x'][self.frame], self.ship_imgs['y'],
             self.ship_imgs['width'][self.frame], self.ship_imgs['height']
-        ], (40, 63), self.flip)
+        ), (40, 63), self.flip)
 
     def hide(self):
         self.hidden = True
-        self.hide_time = gtk()
+        self.hide_time = get_ticks()
         self.rect.center = (2 * WIDTH, 2 * HEIGHT)
 
     def launch_missile(self):
@@ -164,7 +165,7 @@ class Player(pg.sprite.Sprite):
             (self.rect.centerx, self.rect.top)).add(all_sprites, bullets)
 
     def shoot(self):
-        now = gtk()
+        now = get_ticks()
         if not self.hidden:
             if now - self.shoot_time > 250:
                 self.shoot_time = now
@@ -257,7 +258,7 @@ class Player(pg.sprite.Sprite):
         pg.draw.rect(SCREEN, clr, [0, 0, self.shield, 20])
         pg.draw.rect(SCREEN, WHITE, [0, 0, 100, 20], 2)
         if self.shield > 0:
-            text(SCREEN, '{}%'.format(self.shield), (50, 10), aconcepto16,
+            write(SCREEN, f'{self.shield}%', (50, 10), aconcepto16,
                  RED)
 
 
@@ -290,7 +291,7 @@ class Bullet(pg.sprite.Sprite):
         super(Bullet, self).__init__()
         self.direction = direction
         self.rot = rot
-        self.image = Ss(self.guns[0]).get_image(BLACK, angle=self.rot)
+        self.image = SpriteSheet(self.guns[0]).get_image(BLACK, angle=self.rot)
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y
@@ -323,7 +324,7 @@ class Missile(pg.sprite.Sprite):
 
     def seek(self, target):
         self.desired = (target - self.pos).normalize() * self.max_speed
-        self.steer = (self.desired - self.vel)
+        self.steer = self.desired - self.vel
         if self.steer.length() > 1:
             self.steer.scale_to_length(1)
         return self.steer
@@ -346,7 +347,7 @@ class Missile(pg.sprite.Sprite):
 
 class MobMissile(pg.sprite.Sprite):
     '''The mob's guided missiles'''
-    mobsheet2 = Ss(join(IMAGES_FOLDER, 'mobsheet2.png'))
+    mobsheet2 = SpriteSheet(join(IMAGES_FOLDER, 'mobsheet2.png'))
     mob_missile_imgs = {
         'x': (0, 16, 32, 48),
         'y': 0,
@@ -368,17 +369,17 @@ class MobMissile(pg.sprite.Sprite):
         self.frame = 0
         self.max_speed = 6
         if self.type == 'mmf':
-            self.image = self.mobsheet2.get_image(BLACK, [
+            self.image = self.mobsheet2.get_image(BLACK, (
                 self.mob_missile_imgs['x'][self.frame],
                 self.mob_missile_imgs['y'], self.mob_missile_imgs['width'],
                 self.mob_missile_imgs['height']
-            ])
+            ))
         else:
-            self.image = self.mobsheet2.get_image(BLACK, [
+            self.image = self.mobsheet2.get_image(BLACK, (
                 self.mob_missile_imgs2['x'][self.frame],
                 self.mob_missile_imgs2['y'], self.mob_missile_imgs2['width'],
                 self.mob_missile_imgs2['height']
-            ], (16, 16))
+            ), (16, 16))
         self.rect = self.image.get_rect()
         self.pos = self.vect(self.center)
         self.vel = (
@@ -387,7 +388,7 @@ class MobMissile(pg.sprite.Sprite):
         self.rect.center = self.pos
         self.radius = 5
         self.shield = 5
-        self.next = gtk()
+        self.next = get_ticks()
 
     def seek(self, target):
         self.desired = (target - self.pos).normalize() * self.max_speed
@@ -397,8 +398,8 @@ class MobMissile(pg.sprite.Sprite):
         return self.steer
 
     def update(self):
-        if gtk() - self.next > 20:
-            self.next = gtk()
+        if get_ticks() - self.next > 20:
+            self.next = get_ticks()
             self.frame += 1
             if self.frame == len(self.mob_missile_imgs['x']):
                 self.frame = 0
@@ -410,20 +411,20 @@ class MobMissile(pg.sprite.Sprite):
         if self.vel.length() > self.max_speed:
             self.vel.scale_to_length(self.max_speed)
         self.pos += self.vel
-        if self.pos.x < 0 or self.pos.x > WIDTH or self.pos.y > HEIGHT or self.pos.y < 0:
+        if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
             self.kill()
         if self.type == 'mmf':
-            self.image = self.mobsheet2.get_image(BLACK, [
+            self.image = self.mobsheet2.get_image(BLACK, (
                 self.mob_missile_imgs['x'][self.frame],
                 self.mob_missile_imgs['y'], self.mob_missile_imgs['width'],
                 self.mob_missile_imgs['height']
-            ])
+            ))
         else:
-            self.image = self.mobsheet2.get_image(BLACK, [
+            self.image = self.mobsheet2.get_image(BLACK, (
                 self.mob_missile_imgs2['x'][self.frame],
                 self.mob_missile_imgs2['y'], self.mob_missile_imgs2['width'],
                 self.mob_missile_imgs2['height']
-            ], (16, 16))
+            ), (16, 16))
         self.rect.center = self.pos
 
 
@@ -446,11 +447,11 @@ class Asterroid(pg.sprite.Sprite):
         self.rot_speed = randrange(-8, 8)
         self.radius = int(self.rect.width * 0.85 / 2)
         self.shield = int(self.radius / 2)
-        self.rot_time = gtk()
+        self.rot_time = get_ticks()
 
     def rotate(self):
-        if gtk() - self.rot_time > 50:
-            self.rot_time = gtk()
+        if get_ticks() - self.rot_time > 50:
+            self.rot_time = get_ticks()
             self.rotation = (self.rotation + self.rot_speed) % 360
             new_image = pg.transform.rotate(self.image_copy, self.rotation)
             center = self.rect.center
@@ -472,10 +473,10 @@ class Asterroid(pg.sprite.Sprite):
 
 class Explosion(pg.sprite.Sprite):
     '''A class for all types of explosions'''
-    explsheet = Ss(join(IMAGES_FOLDER, 'explsheet.png'))
+    explsheet = SpriteSheet(join(IMAGES_FOLDER, 'explsheet.png'))
     expl_imgs = {
-        'x': tuple(int('{}00'.format(i)) for i in range(9)) * 8,
-        'y': tuple(int('{}00'.format(i)) for i in range(8) for j in range(9)),
+        'x': tuple(int(f'{i}00') for i in range(9)) * 8,
+        'y': tuple(int(f'{i}00') for i in range(8) for j in range(9)),
         'width': 100,
         'height': 100
     }
@@ -484,27 +485,27 @@ class Explosion(pg.sprite.Sprite):
         super(Explosion, self).__init__()
         self.size = size
         self.frame = 0
-        self.image = self.explsheet.get_image(BLACK, [
+        self.image = self.explsheet.get_image(BLACK, (
             self.expl_imgs['x'][self.frame], self.expl_imgs['y'][self.frame],
             self.expl_imgs['width'], self.expl_imgs['height']
-        ], self.size)
+        ), self.size)
         self.rect = self.image.get_rect()
         self.rect.center = center
-        self.time = gtk()
+        self.time = get_ticks()
 
     def update(self):
-        if gtk() - self.time > 1:
-            self.time = gtk()
+        if get_ticks() - self.time > 1:
+            self.time = get_ticks()
             self.frame += 6
             if self.frame == len(self.expl_imgs['x']):
                 self.kill()
             else:
                 center = self.rect.center
-                self.image = self.explsheet.get_image(BLACK, [
+                self.image = self.explsheet.get_image(BLACK, (
                     self.expl_imgs['x'][self.frame],
                     self.expl_imgs['y'][self.frame], self.expl_imgs['width'],
                     self.expl_imgs['height']
-                ], self.size)
+                ), self.size)
                 self.rect = self.image.get_rect()
                 self.rect.center = center
 
@@ -537,7 +538,7 @@ class Powerup(pg.sprite.Sprite):
 class AlienShip(pg.sprite.Sprite):
     '''elongated grey alienship'''
     vect = pg.math.Vector2
-    alien_ship = Ss(join(IMAGES_FOLDER, 'alienspaceship.png'))
+    alien_ship = SpriteSheet(join(IMAGES_FOLDER, 'alienspaceship.png'))
 
     def __init__(self, x, y):
         super(AlienShip, self).__init__()
@@ -556,14 +557,14 @@ class AlienShip(pg.sprite.Sprite):
         self.radius = 50
         self.shield = 17
         self.right = True
-        self.next = gtk()
+        self.next = get_ticks()
         self.shoot_time = self.next
         self.dtime = self.next
         self.rect.center = self.pos
 
     def shoot(self):
-        if gtk() - self.shoot_time > 3000:
-            self.shoot_time = gtk()
+        if get_ticks() - self.shoot_time > 3000:
+            self.shoot_time = get_ticks()
             MobMissile(self.rect.center, 'mmdf').add(all_sprites, pwrups)
 
     def seek_with_approach(self, target):
@@ -581,7 +582,7 @@ class AlienShip(pg.sprite.Sprite):
 
     def update(self):
         self.shoot()
-        now = gtk()
+        now = get_ticks()
         if not ((self.xd, self.yd) - self.pos).length() == 0:
             self.acc = self.seek_with_approach((self.xd, self.yd))
         if now - self.dtime > 2000:
@@ -605,7 +606,7 @@ class AlienShip(pg.sprite.Sprite):
 class AlienShip2(pg.sprite.Sprite):
     '''The elongted red alienship'''
     vect = pg.math.Vector2
-    alien_ship2 = Ss(join(IMAGES_FOLDER, 'att2.png'))
+    alien_ship2 = SpriteSheet(join(IMAGES_FOLDER, 'att2.png'))
 
     def __init__(self, x, y):
         super(AlienShip2, self).__init__()
@@ -624,7 +625,7 @@ class AlienShip2(pg.sprite.Sprite):
         self.radius = 40
         self.shield = 10
         self.right = True
-        self.next = gtk()
+        self.next = get_ticks()
         self.shoot_time = self.next
         self.dtime = self.next
         self.rect.center = self.pos
@@ -632,8 +633,8 @@ class AlienShip2(pg.sprite.Sprite):
         self.then = self.next
 
     def shoot(self):
-        if gtk() - self.shoot_time > 3000:
-            self.shoot_time = gtk()
+        if get_ticks() - self.shoot_time > 3000:
+            self.shoot_time = get_ticks()
             MobMissile(self.rect.center, 'mmdf').add(all_sprites, pwrups)
 
     def seek_with_approach(self, target):
@@ -651,11 +652,11 @@ class AlienShip2(pg.sprite.Sprite):
 
     def update(self):
         self.shoot()
-        now = gtk()
+        now = get_ticks()
         if now - self.then > 300:
             self.then = now
             self.c = (self.c + 5) % 360
-            # self.Ss = (self.Ss + 1) % 360
+            # self.SpriteSheet = (self.SpriteSheet + 1) % 360
         self.acc = self.vect(cos(self.c) * self.max_speed - 10, 10)
         # if not ((self.xd, self.yd) - self.pos).length() == 0:
         # self.acc = self.seek_with_approach((self.xd, self.yd))
@@ -678,9 +679,9 @@ class AlienShip2(pg.sprite.Sprite):
 
 
 class Mob(pg.sprite.Sprite):
-    '''The red eye-like alienship'''
+    '''The eye-like alienship'''
     vect = pg.math.Vector2
-    mobsheet = Ss(join(IMAGES_FOLDER, 'mobsheet.png'))
+    mobsheet = SpriteSheet(join(IMAGES_FOLDER, 'mobsheet.png'))
     mob_imgs = {
         'x': (0, 31, 63, 95, 127, 175, 223, 270),
         'y': 0,
@@ -707,14 +708,14 @@ class Mob(pg.sprite.Sprite):
         self.xd = choice([-100, WIDTH + 100])
         self.radius = 50
         self.shield = 12
-        self.next = gtk()
+        self.next = get_ticks()
         self.shoot_time = self.next
         self.switch = False
         self.rect.center = self.pos
 
     def shoot(self):
-        if gtk() - self.shoot_time > 4000:
-            self.shoot_time = gtk()
+        if get_ticks() - self.shoot_time > 4000:
+            self.shoot_time = get_ticks()
             MobMissile(self.rect.center, 'mmdf').add(all_sprites, pwrups)
 
     def seek_with_approach(self, target):
@@ -732,8 +733,8 @@ class Mob(pg.sprite.Sprite):
 
     def update(self):
         self.shoot()
-        if gtk() - self.next > 500:
-            self.next = gtk()
+        if get_ticks() - self.next > 500:
+            self.next = get_ticks()
             self.frame += 1
             if self.frame == len(self.mob_imgs['x']):
                 self.frame = 0
@@ -751,7 +752,7 @@ class Mob(pg.sprite.Sprite):
 class Mob2(pg.sprite.Sprite):
     '''The round alienship'''
     vect = pg.math.Vector2
-    mobsheet2 = Ss(join(IMAGES_FOLDER, 'mobsheet2.png'))
+    mobsheet2 = SpriteSheet(join(IMAGES_FOLDER, 'mobsheet2.png'))
     mob_imgs2 = {
         'x': (0, 95, 190, 285, 385, 480, 575),
         'y': (45, 270, 496, 718),
@@ -761,6 +762,7 @@ class Mob2(pg.sprite.Sprite):
 
     def __init__(self):
         super(Mob2, self).__init__()
+        start_pt = choice((randint(-50, 0), randint(WIDTH, WIDTH + 50)))
         self.frame = 0
         self.yd = randrange(WIDTH / 2)
         self.max_speed = 10
@@ -772,23 +774,22 @@ class Mob2(pg.sprite.Sprite):
                     self.mob_imgs2['width'][self.frame],
                     self.mob_imgs2['height']))
         self.rect = self.image.get_rect()
-        self.pos = self.vect(
-            choice([randrange(-50, 0),
-                    randrange(WIDTH, WIDTH + 50)]), self.yd)
+        self.pos = self.vect(start_pt, self.yd)
         self.vel = self.vect(-self.max_speed, 0)
         self.acc = self.vect(0, 0)
-        self.xd = self.pos.x
+        self.xd = start_pt
         self.radius = 50
         self.shield = 300
-        self.next = gtk()
+        self.next = get_ticks()
         self.shoot_time = self.next
         self.rect.center = self.pos
-        self.switch = False
+        self.switch = WIDTH <= start_pt <= WIDTH + 50
 
     def shoot(self):
-        if gtk() - self.shoot_time > 2500:
-            self.shoot_time = gtk()
-            b_type = choice(['mmdf', 'mmf'])
+        now = get_ticks()
+        if now - self.shoot_time > 2500:
+            self.shoot_time = now
+            b_type = choice(('mmdf', 'mmf'))
             mm = MobMissile(self.rect.center, b_type)
             if b_type is 'mmf':
                 mm.add(all_sprites, mobs)
@@ -810,8 +811,8 @@ class Mob2(pg.sprite.Sprite):
 
     def update(self):
         self.shoot()
-        if gtk() - self.next > 500:
-            self.next = gtk()
+        if get_ticks() - self.next > 500:
+            self.next = get_ticks()
             self.frame += 1
             if self.frame == len(self.mob_imgs2['x']):
                 self.frame = 0
@@ -819,14 +820,14 @@ class Mob2(pg.sprite.Sprite):
             BLACK, (self.mob_imgs2['x'][self.frame], self.ch,
                     self.mob_imgs2['width'][self.frame],
                     self.mob_imgs2['height']))
-        if self.xd < 500:
+        if self.xd < (WIDTH - 100) // 2:
             self.switch = False
-        elif self.xd > 600:
+        elif self.xd > (WIDTH + 100) // 2:
             self.switch = True
         if self.switch:
-            self.xd -= dt / 10
+            self.xd -= dt // 10
         else:
-            self.xd += dt / 10
+            self.xd += dt // 10
         if (self.vect(self.xd, self.yd) - self.pos).length():
             self.acc = self.seek_with_approach((self.xd, self.yd))
         self.vel += self.acc
@@ -843,7 +844,7 @@ bullets = pg.sprite.Group()
 player = Player()
 all_sprites.add(player)
 mob2 = Mob2()
-then = gtk()
+then = get_ticks()
 ashs_time = then
 ashs_time2 = then
 mob_time = then
@@ -853,7 +854,7 @@ next_mob = then
 next_mob2 = then
 blink_time = then
 wait_time = then
-randy = randrange(40, HEIGHT // 3)
+randy = randint(40, HEIGHT // 3)
 ashc = 0
 ashc2 = 0
 mobc = 0
@@ -872,9 +873,9 @@ clock = pg.time.Clock()
 # game loop:
 while running:
     dt = clock.tick(FPS) // 2
-    now = gtk()
+    now = get_ticks()
     rand = random()
-    music_player()
+    play_music()
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
@@ -893,11 +894,11 @@ while running:
                 player.bombs -= 1
     while game_over:
         clock.tick(FPS)
-        now = gtk()
-        music_player()
-        if len(stars) < 150:
-            for i in range(150):
-                Star().add(stars)
+        now = get_ticks()
+        play_music()
+        # if len(stars) < 150:
+        #     for i in range(150):
+        #         Star().add(stars)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -916,10 +917,9 @@ while running:
         player.add(all_sprites)
         mobs.clear(SCREEN, SCREEN)
         SCREEN.fill(BLACK)
-        stars.draw(SCREEN)
-        text(SCREEN, "Shmup", (WIDTH / 2, HEIGHT / 4), aconcepto100,
-             WHITE)
-        text(SCREEN, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
+        # stars.draw(SCREEN)
+        write(SCREEN, "Shmup", (WIDTH / 2, HEIGHT / 4), aconcepto100, WHITE)
+        write(SCREEN, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
              (WIDTH / 2, HEIGHT / 2), aconcepto16, WHITE)
         if now - blink_time > 1000:
             blink_time = now
@@ -928,13 +928,13 @@ while running:
             else:
                 blink = True
         if blink:
-            text(SCREEN, 'press any key', (WIDTH / 2, HEIGHT * 3 / 4),
+            write(SCREEN, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
                  aconcepto26, WHITE)
-        stars.update()
+        # stars.update()
         pg.display.flip()
     while paused:
         clock.tick(15)
-        music_player()
+        play_music()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -942,12 +942,10 @@ while running:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_n:
                     paused = False
-        text(SCREEN, 'paused', (WIDTH / 2, HEIGHT / 2), aconcepto100,
-             WHITE)
+        write(SCREEN, 'paused', (WIDTH / 2, HEIGHT / 2), aconcepto100, WHITE)
         pg.display.flip()
     # collisions:
-    hits = pg.sprite.groupcollide(mobs, bullets, False, True,
-                                  pg.sprite.collide_circle)
+    hits = pg.sprite.groupcollide(mobs, bullets, False, True, pg.sprite.collide_circle)
     for hit in hits:
         if type(hit) is not Asterroid:
             score += int(100 - hit.radius)
@@ -959,7 +957,7 @@ while running:
             all_sprites.add(expl)
             if 0.1 < rand < 0.4:
                 new_asterroid()
-            if type(hit) in {AlienShip, AlienShip2, Mob}:
+            if type(hit) in (AlienShip, AlienShip2, Mob):
                 if rand > 0.9:
                     pwr = Powerup(hit.rect.center)
                     pwr.add(all_sprites, pwrups)
@@ -974,8 +972,7 @@ while running:
             mx = max(hit.rect.width // 2, hit.rect.height // 2)
             expl = Explosion(hit.rect.center, (mx, mx))
             all_sprites.add(expl)
-    beats = pg.sprite.spritecollide(player, mobs, True,
-                                    pg.sprite.collide_circle)
+    beats = pg.sprite.spritecollide(player, mobs, True, pg.sprite.collide_circle)
     for beat in beats:
         get_hit(beat)
     power = pg.sprite.spritecollide(player, pwrups, True, pg.sprite.collide_circle)
@@ -985,10 +982,10 @@ while running:
             player.pwr_level += 1
             if player.pwr_level <= 7:
                 player.weapon += 1
-            player.pwr_time = gtk()
+            player.pwr_time = get_ticks()
         if pwr.type == POWERUPS[1]:
             player.shield += randrange(10, 30)
-            player.pwr_time = gtk()
+            player.pwr_time = get_ticks()
             if player.shield >= 100:
                 player.shield = 100
         if pwr.type == POWERUPS[2]:
@@ -1033,13 +1030,13 @@ while running:
             bring_ash2 = False
     if now - next_mob2 > 6000:
         next_mob2 = now
-        if rand > .6:
+        if rand > 0.6:
             Mob2().add(all_sprites, mobs)
     if now - next_mob > 12000:
         next_mob = now
-        if rand < .9:
+        if rand < 0.9:
             mobc = 0
-            randy = randrange(40, HEIGHT // 3)
+            randy = randint(40, HEIGHT // 3)
     if now - mob_time > 500 and mobc < 12:
         mob_time = now
         mobc += 1
@@ -1051,15 +1048,14 @@ while running:
     if len(mobs) < 5:
         for i in range(7):
             new_asterroid()
-    stars.draw(SCREEN)
+    # stars.draw(SCREEN)
     all_sprites.draw(SCREEN)
-    text(SCREEN, 'Score:{}'.format(score), (WIDTH / 2, 10), aconcepto20,
-         WHITE)
-    text(SCREEN, 'weapon:{}/{}'.format(player.weapon, player.pwr_level),
+    write(SCREEN, f'Score:{score}', (WIDTH // 2, 10), aconcepto20, WHITE)
+    write(SCREEN, f'weapon:{player.weapon}/{player.pwr_level}',
          (WIDTH * 3 / 4, 10), aconcepto16, RED)
     player.shield_bar()
     # update:
-    stars.update()
+    # stars.update()
     all_sprites.update()
     pg.display.flip()
 pg.quit()
