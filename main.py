@@ -11,7 +11,7 @@ from pygame.time import get_ticks
 from pygame.freetype import SysFont
 from pygame.math import Vector2 as vec
 
-from spritesheet import SpriteSheet, write
+from utils import SpriteSheet, write
 from settings import *
 
 
