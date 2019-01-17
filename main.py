@@ -6,17 +6,16 @@ from os.path import join
 
 import pygame as pg
 from pygame.mixer import music as music_player
-from pygame.constants import DOUBLEBUF
+from pygame.math import Vector2 as vec
 from pygame.time import get_ticks
 from pygame.freetype import SysFont
-from pygame.math import Vector2 as vec
 
 from utils import SpriteSheet, write
 from settings import *
 
 
 pg.init()
-screen = pg.display.set_mode((WIDTH, HEIGHT), DOUBLEBUF)
+screen = pg.display.set_mode((WIDTH, HEIGHT), pg.constants.DOUBLEBUF)
 screen.set_alpha(None)
 clock = pg.time.Clock()
 pg.display.set_caption(CAPTION)
@@ -42,9 +41,9 @@ class Game:
     screen = screen
 
     def __init__(self):
-        with open("highscore.txt", "r") as hs:
+        with open("highscore.txt", "r") as hsf:
             try:
-                self.highscore = int(hs.read())
+                self.highscore = int(hsf.read())
             except:
                 self.highscore = 0
         now = get_ticks()
@@ -162,7 +161,7 @@ class Game:
                     self.new_highscore = True
                     self.highscore = score
                     with open("highscore.txt", "w") as hsf:
-                        hsf.write(screen, str(self.highscore))
+                        hsf.write(str(self.highscore))
 
                 self.game_over = True
                 self.restart = False
@@ -176,7 +175,7 @@ class Game:
                 self.blink_time = now
                 self.blink = not self.blink
             if self.blink:
-                if self.highscore:
+                if self.new_highscore:
                     write(screen, f'New High Score: {self.highscore}',
                                 (WIDTH // 2, HEIGHT // 3), aconcepto26, WHITE)
                 else:

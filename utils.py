@@ -1,7 +1,7 @@
 import pygame as pg
-from pygame.constants import RLEACCEL
 
 
+RLEACCEL = pg.constants.RLEACCEL
 class SpriteSheet:
     def __init__(self, filename):
         self.spritesheet = pg.image.load(filename).convert()
@@ -20,7 +20,7 @@ class SpriteSheet:
             image = pg.transform.scale(image, size)
         if horizontally or vertically:
             image = pg.transform.flip(image, horizontally, vertically)
-        return image if angle else pg.transform.rotate(image.copy(), angle)
+        return pg.transform.rotate(image.copy(), angle) if angle else image
 
 
 def write(screen, text, center, font, color):
