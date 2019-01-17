@@ -5,16 +5,19 @@ from glob import glob
 from os.path import join
 
 import pygame as pg
+from pygame.mixer import music as music_player
+from pygame.constants import DOUBLEBUF
 from pygame.time import get_ticks
 from pygame.freetype import SysFont
 from pygame.math import Vector2 as vec
 
-from spritesheet import SpriteSheet
+from spritesheet import SpriteSheet, write
 from settings import *
 
 
 pg.init()
-screen = pg.display.set_mode((WIDTH, HEIGHT))
+screen = pg.display.set_mode((WIDTH, HEIGHT), DOUBLEBUF)
+screen.set_alpha(None)
 clock = pg.time.Clock()
 pg.display.set_caption(CAPTION)
 shipsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'shipsheet.png'))
@@ -22,6 +25,7 @@ pg.display.set_icon(shipsheet.get_image(BLACK, (0, 192, 32, 50)))
 pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
 # images:
+title_bar_rect = (0, 0, WIDTH, 30)
 mini_ship = shipsheet.get_image(BLACK, (0, 192, 32, 50), (20, 20))
 mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'spaceMissiles_006.png')
                         ).get_image(BLACK, size=(15, 25))
@@ -54,6 +58,7 @@ class Game:
         self.blink_time = now
         self.blink = False
         self.current_track = 0
+        self.rand_pos = randrange(40, HEIGHT // 3)
         self.new_highscore = False
         self.restart = True
         self.player = Player()
@@ -72,16 +77,15 @@ class Game:
         self.eyelike_mob_time = now
         self.next_eyelike_mob = now
         self.eyelike_mob_count = 0
+        # round mob
         self.next_round_mob = now
 
         # groups
-        self.all_sprites = pg.sprite.Group(self.player)
+        self.all_sprites = pg.sprite.RenderUpdates(self.player)
         self.mobs = pg.sprite.Group()
-        self.stars = pg.sprite.Group()
         self.powerups = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.mob_bullets = pg.sprite.Group()
-        self.rand_pos = randrange(40, HEIGHT // 3)
 
     def run(self):
         self.dt = clock.tick(FPS) // 2
@@ -95,61 +99,59 @@ class Game:
         self.handle_events()
 
         # collisions:
-        self.calculate_collisions()
+        self.handle_collisions()
 
         # mobs stuff
         self.get_mobs()
 
-        # draw everything on the screen
-        self.draw()
-
-        # update
-        self.all_sprites.update()
-        pg.display.flip()
+        # draw and update everything on the screen
+        self.draw_and_update()
 
     def start(self):
-        game_start = True
-        while game_start:
+        while True:
             clock.tick(15)
-            self.now = get_ticks()
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYUP:
-                    game_start = False
+                    screen.fill(BLACK)
+                    pg.display.flip()
+                    return
                 elif event.type == pg.QUIT:
                     pg.quit()
                     quit()
 
-            self.screen.fill(BLACK)
-            self.write("Space Shooter", (WIDTH / 2, HEIGHT / 4), aconcepto26, WHITE)
-            self.write('Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                 (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
-            if self.now - self.blink_time > 1000:
-                self.blink_time = self.now
+            screen.fill(BLACK)
+            write(screen, "Space Shooter", (WIDTH / 2, HEIGHT / 4), aconcepto26, WHITE)
+            write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
+                        (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
+            now = get_ticks()
+            if now - self.blink_time > 1000:
+                self.blink_time = now
                 self.blink = not self.blink
-            self.write(f'High Score: {self.highscore}', (WIDTH // 2, HEIGHT * 2 // 3),
-                 aconcepto26, WHITE)
+            write(screen, f'High Score: {self.highscore}', (WIDTH // 2, HEIGHT * 2 // 3),
+                        aconcepto26, WHITE)
             if self.blink:
-                self.write('press any key', (WIDTH // 2, HEIGHT * 3 // 4),
-                     aconcepto26, WHITE)
+                write(screen, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
+                            aconcepto26, WHITE)
 
-            # stars.update()
             pg.display.flip()
 
     def over(self):
-        # game over
         while self.game_over:
             clock.tick(15)
-            self.now = get_ticks()
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYUP and not self.wait:
                     self.game_over = False
+                    screen.fill(BLACK)
+                    pg.display.flip()
+                    return
                 elif event.type == pg.QUIT:
                     pg.quit()
                     quit()
 
-            if self.now - self.wait_time > 1500:
+            now = get_ticks()
+            if now - self.wait_time > 1500:
                 self.wait = False
             # initialisation:
             if self.restart:
@@ -159,29 +161,29 @@ class Game:
                 if score > self.highscore:
                     self.new_highscore = True
                     self.highscore = score
-                    with open("highscore.txt", "w") as hs:
-                        hs.write(str(self.highscore))
+                    with open("highscore.txt", "w") as hsf:
+                        hsf.write(screen, str(self.highscore))
 
                 self.game_over = True
                 self.restart = False
                 self.current_track = ct
             # draw
-            self.screen.fill(BLACK)
-            self.write("Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
-            self.write('Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                 (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
-            if self.now - self.blink_time > 1000:
-                self.blink_time = self.now
+            screen.fill(BLACK)
+            write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
+            write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
+                        (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
+            if now - self.blink_time > 1000:
+                self.blink_time = now
                 self.blink = not self.blink
             if self.blink:
                 if self.highscore:
-                    self.write(f'New High Score: {self.highscore}',
-                          (WIDTH // 2, HEIGHT // 3), aconcepto26, WHITE)
+                    write(screen, f'New High Score: {self.highscore}',
+                                (WIDTH // 2, HEIGHT // 3), aconcepto26, WHITE)
                 else:
-                    self.write('Game Over', (WIDTH // 2, HEIGHT // 3),
-                           aconcepto26, WHITE)
-                self.write('press any key', (WIDTH // 2, HEIGHT * 3 // 4),
-                     aconcepto26, WHITE)
+                    write(screen, 'Game Over', (WIDTH // 2, HEIGHT // 3),
+                                aconcepto26, WHITE)
+                write(screen, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
+                            aconcepto26, WHITE)
 
             # update
             pg.display.flip()
@@ -194,10 +196,13 @@ class Game:
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_n:
                         self.paused = False
+                        screen.fill(BLACK)
+                        pg.display.flip()
+                        return
                 elif event.type == pg.QUIT:
                     pg.quit()
                     quit()
-            self.write('paused', (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
+            write(screen, 'paused', (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
             pg.display.flip()
 
     def handle_events(self):
@@ -217,24 +222,32 @@ class Game:
             elif event.type == pg.QUIT:
                 self.running = False
 
-    def draw(self):
-        self.screen.fill(BLACK)
-        for i in range(self.player.lives):
-            self.screen.blit(mini_ship, ((WIDTH - 90) + 30 * i, 10))
-        for i in range(self.player.bombs):
-            self.screen.blit(mini_bomb, (110 + 30 * i, 5))
-        # stars.draw(self.screen)
-        self.all_sprites.draw(self.screen)
-        self.write(f'Score:{self.player.score}', (WIDTH // 2, 10), aconcepto20, WHITE)
-        self.write(f'weapon:{self.player.weapon}/{self.player.power_level}',
-             (WIDTH * 3 // 4, 10), aconcepto14, RED)
-        self.player.shield_bar()
+    def draw_and_update(self):
+        self.all_sprites.clear(screen, lambda surf, rect: surf.fill(BLACK, rect))
+        self.all_sprites.update()
+        # draw
+        dirty_rects = self.all_sprites.draw(screen)
+        self.draw_title_bar()
+        dirty_rects.append(title_bar_rect)
+        # update
+        pg.display.update(dirty_rects)
 
-    def write(self, text, center, font, color):
-        '''A function that draws a text on the screen'''
-        text_rect = font.get_rect(text)
-        text_rect.center = center
-        font.render_to(self.screen, text_rect, None, color)
+    def draw_title_bar(self):
+        player = self.player
+        screen_blit = screen.blit
+        screen.fill(BLACK, title_bar_rect)
+        for i in range(player.lives):
+            screen_blit(mini_ship, ((WIDTH - 90) + 30 * i, 10))
+        for i in range(player.bombs):
+            screen_blit(mini_bomb, (110 + 30 * i, 5))
+        write(screen, f'Score:{player.score}', (WIDTH // 2, 10), aconcepto20, WHITE)
+        write(screen, f'weapon:{player.weapon}/{player.power_level}',
+                    (WIDTH * 3 // 4, 10), aconcepto14, RED)
+        color = RED if player.shield < 20 else (36, 218, 181)
+        pg.draw.rect(screen, color, (0, 0, player.shield, 20))
+        pg.draw.rect(screen, WHITE, (0, 0, 100, 20), 2)
+        if player.shield > 0:
+            write(screen, f'{player.shield}%', (50, 10), aconcepto14, RED)
 
     def get_mobs(self):
         if self.now - self.grey_mob_time > 10000:
@@ -274,7 +287,7 @@ class Game:
             for i in range(7):
                 Asterroid().add(self.all_sprites, self.mobs)
 
-    def calculate_collisions(self):
+    def handle_collisions(self):
         for mob in pg.sprite.groupcollide(self.mobs, self.bullets, False, True):
             self.player.hit(mob)
         for mob in pg.sprite.spritecollide(self.player, self.mobs, True):
@@ -286,16 +299,16 @@ class Game:
         self.player.set_power()
 
     def play_music(self):
-        if not pg.mixer.music.get_busy():
-            pg.mixer.music.load(MUSIC[self.current_track])
-            pg.mixer.music.play(1)
+        if not music_player.get_busy():
+            music_player.load(MUSIC[self.current_track])
+            music_player.play(1)
             self.current_track += 1
             if self.current_track == len(MUSIC):
                 self.current_track = 0
         if self.paused:
-            pg.mixer.music.pause()
+            music_player.pause()
         else:
-            pg.mixer.music.unpause()
+            music_player.unpause()
 
 
 # the sprites:
@@ -333,8 +346,8 @@ class Player(pg.sprite.Sprite):
 
     def update(self):
         if self.hidden and get_ticks() - self.hide_time > 1500:
-            self.hidden = False
             self.bomb()
+            self.hidden = False
             self.rect.centerx = WIDTH / 2
             self.rect.bottom = HEIGHT - 10
         key_state = pg.key.get_pressed()
@@ -553,13 +566,6 @@ class Player(pg.sprite.Sprite):
                 if type(mob) is not Asterroid:
                     self.score += 100 - mob.radius
 
-    def shield_bar(self):
-        color = RED if self.shield < 20 else (36, 218, 181)
-        pg.draw.rect(game.screen, color, (0, 0, self.shield, 20))
-        pg.draw.rect(game.screen, WHITE, (0, 0, 100, 20), 2)
-        if self.shield > 0:
-            game.write(f'{self.shield}%', (50, 10), aconcepto14, RED)
-
 
 class Star(pg.sprite.Sprite):
     '''The stars in the background'''
@@ -598,7 +604,7 @@ class Bullet(pg.sprite.Sprite):
     def update(self):
         self.rect.y -= 2 * game.dt
         self.rect.x += self.direction * game.dt
-        if self.rect.bottom < 0:
+        if self.rect.bottom < 0 or self.rect.right < 0 or self.rect.left > WIDTH:
             self.kill()
 
 
@@ -988,11 +994,11 @@ class RedMob(pg.sprite.Sprite):
         self.acc = vec(cos(self.c) * self.max_speed - 10, 10)
         # if not ((self.xd, self.yd) - self.pos).length() == 0:
         # self.acc = self.seek_with_approach((self.xd, self.yd))
+        if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
+            self.kill()
         if now - self.dtime > 2000:
             self.dtime = now
             self.yd += 400
-            if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
-                self.kill()
             if self.right:
                 self.xd += 100
                 self.right = False
@@ -1009,7 +1015,7 @@ class RedMob(pg.sprite.Sprite):
 class EyeLikeMob(pg.sprite.Sprite):
     '''The eye-like alienship'''
     mobsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'eyelike_mobsheet.png'))
-    image = mobsheet.get_image(WHITE, (0, 0, 31, 80))
+    image = mobsheet.get_image(rect=(0, 0, 31, 80))
     mob_imgs = {
         'x': (0, 31, 63, 95, 127, 175, 223, 270),
         'y': 0,
@@ -1043,18 +1049,18 @@ class EyeLikeMob(pg.sprite.Sprite):
             self.shoot_time = now
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
-    def seek_with_approach(self, target):
-        self.desired = (target - self.pos)
-        dist = self.desired.length()
-        self.desired.normalize_ip()
-        if dist < self.approach_radius:
-            self.desired *= dist / self.approach_radius * self.max_speed
-        else:
-            self.desired *= self.max_speed
-        self.steer = (self.desired - self.vel)
-        if self.steer.length() > self.steer_force:
-            self.steer.scale_to_length(self.steer_force)
-        return self.steer
+    # def seek_with_approach(self, target):
+    #     self.desired = (target - self.pos)
+    #     dist = self.desired.length()
+    #     self.desired.normalize_ip()
+    #     if dist < self.approach_radius:
+    #         self.desired *= dist / self.approach_radius * self.max_speed
+    #     else:
+    #         self.desired *= self.max_speed
+    #     self.steer = (self.desired - self.vel)
+    #     if self.steer.length() > self.steer_force:
+    #         self.steer.scale_to_length(self.steer_force)
+    #     return self.steer
 
     def update(self):
         self.shoot()
