@@ -10,7 +10,7 @@ from pygame.math import Vector2 as vec
 from pygame.time import get_ticks
 from pygame.freetype import SysFont
 
-from utils import SpriteSheet, write
+from utils import SpriteSheet, write, get_image
 from settings import *
 
 
@@ -19,15 +19,14 @@ screen = pg.display.set_mode((WIDTH, HEIGHT), pg.constants.DOUBLEBUF)
 screen.set_alpha(None)
 clock = pg.time.Clock()
 pg.display.set_caption(CAPTION)
-shipsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'shipsheet.png'))
-pg.display.set_icon(shipsheet.get_image(BLACK, (0, 192, 32, 50)))
+shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'shipsheet.png'))
+pg.display.set_icon(shipsheet.get_image((0, 192, 32, 50)))
 pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
-# images:
 title_bar_rect = (0, 0, WIDTH, 30)
-mini_ship = shipsheet.get_image(BLACK, (0, 192, 32, 50), (20, 20))
+mini_ship = shipsheet.get_image_advanced((0, 192, 32, 50), (20, 20))
 mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'spaceMissiles_006.png')
-                        ).get_image(BLACK, size=(15, 25))
+                        ).get_image_advanced(size=(15, 25))
 SOUNDS = tuple(pg.mixer.Sound(f) for f in glob(join(SOUNDS_FOLDER, 'sound_tracks', '**')))
 # fonts
 aconcepto100 = SysFont("a_Concepto", 100)
@@ -63,21 +62,21 @@ class Game:
         self.player = Player()
 
         # grey mob
-        self.grey_mob_time = now
-        self.next_grey_mob = now
-        self.get_grey_mob = True
-        self.grey_mob_count = 0
+        GreyMob.duration = now
+        GreyMob.next_time = now
+        GreyMob.its_time = True
+        GreyMob.count = 0
         # red mob
-        self.red_mob_time = now
-        self.next_red_mob = now
-        self.get_red_mob = False
-        self.red_mob_count = 0
+        RedMob.duration = now
+        RedMob.next_time = now
+        RedMob.its_time = False
+        RedMob.count = 0
         # eye-like mob
-        self.eyelike_mob_time = now
-        self.next_eyelike_mob = now
-        self.eyelike_mob_count = 0
+        EyeLikeMob.duration = now
+        EyeLikeMob.next_time = now
+        EyeLikeMob.count = 0
         # round mob
-        self.next_round_mob = now
+        RoundMob.next_time = now
 
         # groups
         self.all_sprites = pg.sprite.RenderUpdates(self.player)
@@ -122,16 +121,16 @@ class Game:
             screen.fill(BLACK)
             write(screen, "Space Shooter", (WIDTH / 2, HEIGHT / 4), aconcepto26, WHITE)
             write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                        (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
+                  (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
             now = get_ticks()
             if now - self.blink_time > 1000:
                 self.blink_time = now
                 self.blink = not self.blink
             write(screen, f'High Score: {self.highscore}', (WIDTH // 2, HEIGHT * 2 // 3),
-                        aconcepto26, WHITE)
+                  aconcepto26, WHITE)
             if self.blink:
                 write(screen, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
-                            aconcepto26, WHITE)
+                      aconcepto26, WHITE)
 
             pg.display.flip()
 
@@ -170,19 +169,19 @@ class Game:
             screen.fill(BLACK)
             write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
             write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                        (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
+                  (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
             if now - self.blink_time > 1000:
                 self.blink_time = now
                 self.blink = not self.blink
             if self.blink:
                 if self.new_highscore:
                     write(screen, f'New High Score: {self.highscore}',
-                                (WIDTH // 2, HEIGHT // 3), aconcepto26, WHITE)
+                          (WIDTH // 2, HEIGHT // 3), aconcepto26, WHITE)
                 else:
                     write(screen, 'Game Over', (WIDTH // 2, HEIGHT // 3),
-                                aconcepto26, WHITE)
+                          aconcepto26, WHITE)
                 write(screen, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
-                            aconcepto26, WHITE)
+                      aconcepto26, WHITE)
 
             # update
             pg.display.flip()
@@ -214,7 +213,7 @@ class Game:
                     if self.player.weapon > self.player.power_level:
                         self.player.weapon = 1
                 elif event.key == pg.K_h:
-                    self.player.hold_fire = not self.player.hold_fire
+                    self.player.open_fire = not self.player.open_fire
                 elif event.key == pg.K_b and self.player.bombs > 0:
                     self.player.bombs -= 1
                     self.player.bomb()
@@ -241,7 +240,7 @@ class Game:
             screen_blit(mini_bomb, (110 + 30 * i, 5))
         write(screen, f'Score:{player.score}', (WIDTH // 2, 10), aconcepto20, WHITE)
         write(screen, f'weapon:{player.weapon}/{player.power_level}',
-                    (WIDTH * 3 // 4, 10), aconcepto14, RED)
+              (WIDTH * 3 // 4, 10), aconcepto14, RED)
         color = RED if player.shield < 20 else (36, 218, 181)
         pg.draw.rect(screen, color, (0, 0, player.shield, 20))
         pg.draw.rect(screen, WHITE, (0, 0, 100, 20), 2)
@@ -249,39 +248,10 @@ class Game:
             write(screen, f'{player.shield}%', (50, 10), aconcepto14, RED)
 
     def get_mobs(self):
-        if self.now - self.grey_mob_time > 10000:
-            self.grey_mob_time = self.now
-            self.get_grey_mob = True
-        if self.now - self.next_grey_mob > 500 and self.get_grey_mob:
-            self.next_grey_mob = self.now
-            self.grey_mob_count += 1
-            GreyMob(200, -50).add(self.all_sprites, self.mobs)
-            if self.grey_mob_count > 5:
-                self.grey_mob_count = 0
-                self.get_grey_mob = False
-        if self.now - self.red_mob_time > 8000:
-            self.red_mob_time = self.now
-            self.get_red_mob = True
-        if self.now - self.next_red_mob > 200 and self.get_red_mob:
-            self.red_mob_count += 1
-            self.next_red_mob = self.now
-            RedMob(500, -200).add(self.all_sprites, self.mobs)
-            if self.red_mob_count > 5:
-                self.red_mob_count = 0
-                self.get_red_mob = False
-        if self.now - self.next_round_mob > 6000:
-            self.next_round_mob = self.now
-            if self.rand > 0.6:
-                RoundMob().add(self.all_sprites, self.mobs)
-        if self.now - self.next_eyelike_mob > 12000:
-            self.next_eyelike_mob = self.now
-            if self.rand < 0.9:
-                self.eyelike_mob_count = 0
-                self.rand_pos = randrange(40, HEIGHT // 3)
-        if self.now - self.eyelike_mob_time > 500 and self.eyelike_mob_count < 12:
-            self.eyelike_mob_time = self.now
-            self.eyelike_mob_count += 1
-            EyeLikeMob(self.rand_pos).add(self.all_sprites, self.mobs)
+        GreyMob.get(self, self.now)
+        RedMob.get(self, self.now)
+        RoundMob.get(self, self.now)
+        EyeLikeMob.get(self, self.now)
         if len(self.mobs) < 5:
             for i in range(7):
                 Asterroid().add(self.all_sprites, self.mobs)
@@ -295,7 +265,7 @@ class Game:
             self.player.get_powerup(powerup)
         for mob_bullet in pg.sprite.spritecollide(self.player, self.mob_bullets, True):
             self.player.get_hit(mob_bullet)
-        self.player.set_power()
+        self.player.set_power(self.now)
 
     def play_music(self):
         if not music_player.get_busy():
@@ -313,21 +283,21 @@ class Game:
 # the sprites:
 class Player(pg.sprite.Sprite):
     '''The spaceship sprite'''
-    ship_imgs = {
-        'x': (0, 32, 67, 99),
-        'y': 192,
-        'width': (32, 32, 30, 30),
-        'height': 50
-    }
+
+    FRAMES = tuple((shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192,
+                                                  (32, 32, 30, 30)[i], 50), (40, 63)),
+                    shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192,
+                                                  (32, 32, 30, 30)[i], 50), (40, 63), horizontally=True)
+                    ) for i in range(4))
 
     def __init__(self):
         super(Player, self).__init__()
-        self.image = shipsheet.get_image(BLACK, (0, 192, 32, 50), (40, 63))
+        self.image = Player.FRAMES[0][False]
         self.rect = self.image.get_rect()
-        self.radius = 10
         self.rect.bottom = HEIGHT - 10
-        self.rect.centerx = WIDTH / 2
-        self.frame = 0
+        self.rect.centerx = WIDTH // 2
+        self.radius = 10
+        self.frame_nbr = 0
         self.lives = 3
         self.shield = 100
         self.score = 0
@@ -336,7 +306,7 @@ class Player(pg.sprite.Sprite):
         self.bombs = 1
         self.hidden = False
         self.flip = False
-        self.hold_fire = True
+        self.open_fire = True
         self.shoot_time = get_ticks()
         self.missile_time = self.shoot_time
         self.power_time = self.shoot_time
@@ -347,48 +317,42 @@ class Player(pg.sprite.Sprite):
         if self.hidden and get_ticks() - self.hide_time > 1500:
             self.bomb()
             self.hidden = False
-            self.rect.centerx = WIDTH / 2
+            self.rect.centerx = WIDTH // 2
             self.rect.bottom = HEIGHT - 10
         key_state = pg.key.get_pressed()
-        if (key_state[pg.K_LEFT]
-                or key_state[pg.K_RIGHT]) and (key_state[pg.K_UP]
-                                               or key_state[pg.K_DOWN]):
-            step = game.dt / 1.414
-        else:
-            step = game.dt
-        if key_state[pg.K_RIGHT] or key_state[pg.K_LEFT]:
+        step = game.dt
+        if key_state[pg.K_LEFT] or key_state[pg.K_RIGHT]:
+            if key_state[pg.K_UP] or key_state[pg.K_DOWN]:
+                step = game.dt / 1.414
             if key_state[pg.K_LEFT]:
                 self.rect.x -= step
+                if self.rect.left <= 0:
+                    self.rect.left = 0
                 self.flip = False
             elif key_state[pg.K_RIGHT]:
                 self.rect.x += step
+                if self.rect.right >= WIDTH:
+                    self.rect.right = WIDTH
                 self.flip = True
             now = get_ticks()
             if now - self.strive > 100:
                 self.strive = now
-                self.frame += 1
-                if self.frame > 3:
-                    self.frame = 3
+                self.frame_nbr += 1
+                if self.frame_nbr > 3:
+                    self.frame_nbr = 3
         else:
-            self.frame = 0
+            self.frame_nbr = 0
         if key_state[pg.K_UP]:
             self.rect.y -= step
+            if self.rect.top <= 0:
+                self.rect.top = 0
         elif key_state[pg.K_DOWN]:
             self.rect.y += step
-        if key_state[pg.K_SPACE] or self.hold_fire:
+            if HEIGHT <= self.rect.bottom < HEIGHT + 100:
+                self.rect.bottom = HEIGHT
+        if key_state[pg.K_SPACE] or self.open_fire:
             self.shoot()
-        if self.rect.right >= WIDTH:
-            self.rect.right = WIDTH 
-        elif self.rect.left <= 0:
-            self.rect.left = 0
-        if HEIGHT <= self.rect.bottom < HEIGHT + 100:
-            self.rect.bottom = HEIGHT
-        elif self.rect.top <= 0:
-            self.rect.top = 0
-        self.image = shipsheet.get_image(BLACK, (
-            self.ship_imgs['x'][self.frame], self.ship_imgs['y'],
-            self.ship_imgs['width'][self.frame], self.ship_imgs['height']
-        ), (40, 63), self.flip)
+        self.image = Player.FRAMES[self.frame_nbr][self.flip]
 
     def hide(self):
         self.hidden = True
@@ -483,9 +447,9 @@ class Player(pg.sprite.Sprite):
             if 0.1 < game.rand < 0.4:
                 Asterroid().add(game.all_sprites, game.mobs)
             elif game.rand > 0.8 and type(mob) is RoundMob:
-                    Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
+                Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
             elif game.rand > 0.9 and isinstance(mob, (GreyMob, RedMob, EyeLikeMob)):
-                    Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
+                Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
             elif game.rand > 0.99:
                 Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
         else:
@@ -541,8 +505,7 @@ class Player(pg.sprite.Sprite):
             elif self.bombs > 3:
                 self.bombs = 3
 
-    def set_power(self):
-        now = get_ticks()
+    def set_power(self, now):
         if now - self.power_time > 10000:
             self.power_time = now
             self.power_level -= 1
@@ -566,39 +529,18 @@ class Player(pg.sprite.Sprite):
                     self.score += 100 - mob.radius
 
 
-class Star(pg.sprite.Sprite):
-    '''The stars in the background'''
-
-    def __init__(self):
-        super(Star, self).__init__()
-        self.rand = randrange(4, 8)
-        self.image = pg.Surface((self.rand, self.rand))
-        self.rect = self.image.get_rect()
-        pg.draw.circle(self.image, WHITE, self.rect.center, self.rand // 2)
-        self.image.set_colorkey(BLACK)
-        self.rect.center = (randrange(WIDTH), randrange(-150, HEIGHT))
-
-    def update(self):
-        if self.rand < 6:
-            self.rect.y += 0.2 * game.dt
-        else:
-            self.rect.y += 0.25 * game.dt
-        if self.rect.top > HEIGHT:
-            self.rect.center = (randrange(WIDTH), randrange(-150, 0))
-
-
 class Bullet(pg.sprite.Sprite):
     '''The player's lazer bullets'''
-    spritesheet = SpriteSheet(join(IMAGES_FOLDER, 'guns', 'laser.png'))
+
+    image = get_image(join(IMAGES_FOLDER, 'guns', 'laser.png'))
 
     def __init__(self, x, y, direction=0, rot=0):
         super(Bullet, self).__init__()
-        self.direction = direction
-        self.rot = rot
-        self.image = Bullet.spritesheet.get_image(BLACK, angle=self.rot)
+        self.image = pg.transform.rotate(Bullet.image.copy(), rot)
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y
+        self.direction = direction
 
     def update(self):
         self.rect.y -= 2 * game.dt
@@ -609,29 +551,30 @@ class Bullet(pg.sprite.Sprite):
 
 class Missile(pg.sprite.Sprite):
     '''The player's guided missiles'''
-    image = SpriteSheet(join(IMAGES_FOLDER, 'guns', 'missile.png')
-                        ).get_image(BLACK)
+
+    image = get_image(join(IMAGES_FOLDER, 'guns', 'missile.png'))
+
+    MAX_SPEED = 18
+    radius = 15
 
     def __init__(self, center):
         super(Missile, self).__init__()
-        self.max_speed = 18
         self.center = center
         self.image_copy = self.image.copy()
         self.rect = self.image.get_rect()
         self.target = choice(game.mobs.sprites())
         self.pos = vec(self.center)
-        self.vel = vec(0, -self.max_speed / 2)
+        self.vel = vec(0, -Missile.MAX_SPEED / 2)
         self.acc = vec(0, 0)
         self.rect.center = self.pos
-        self.radius = 15
         self.shield = 5
 
     def seek(self, target):
-        self.desired = (target - self.pos).normalize() * self.max_speed
-        self.steer = self.desired - self.vel
-        if self.steer.length() > 1:
-            self.steer.scale_to_length(1)
-        return self.steer
+        desired = (target - self.pos).normalize() * Missile.MAX_SPEED
+        steer = desired - self.vel
+        if steer.length() > 1:
+            steer.scale_to_length(1)
+        return steer
 
     def update(self):
         self.acc = self.seek(self.target.rect.center)
@@ -641,8 +584,8 @@ class Missile(pg.sprite.Sprite):
         self.normal = vec(0, self.rect.centery)
         self.image = pg.transform.rotate(self.image_copy,
                                          self.vel.angle_to(self.normal) + 180)
-        if self.vel.length() > self.max_speed:
-            self.vel.scale_to_length(self.max_speed)
+        if self.vel.length() > Missile.MAX_SPEED:
+            self.vel.scale_to_length(Missile.MAX_SPEED)
         self.pos += self.vel
         if self.pos.x < 0 or self.pos.x > WIDTH or self.pos.y > HEIGHT or self.pos.y < 0:
             self.kill()
@@ -651,162 +594,147 @@ class Missile(pg.sprite.Sprite):
 
 class MobBullet(pg.sprite.Sprite):
     '''The mob's bullets'''
-    mobsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'mobsheet.png'))
-    image = mobsheet.get_image(BLACK, (0, 640, 32, 32), (16, 16))
-    mob_missile_imgs = {
-        'x': (0, 32, 64, 128),
-        'y': 640,
-        'width': 32,
-        'height': 32
-    }
+
+    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
+                               ).get_image_advanced(
+        ((0, 32, 64, 128)[i], 640, 32, 32), (16, 16)) for i in range(4))
+    image = FRAMES[0]
+    MAX_SPEED = 6
+    radius = 5
 
     def __init__(self, center):
         super(MobBullet, self).__init__()
-        self.center = center
-        self.frame = 0
-        self.max_speed = 6
         self.rect = self.image.get_rect()
-        self.pos = vec(self.center)
+        self.pos = vec(center)
         self.vel = (
-            game.player.rect.center - self.pos).normalize() * 1.5 * self.max_speed
+            game.player.rect.center - self.pos).normalize() * 1.5 * MobBullet.MAX_SPEED
         self.acc = vec(0, 0)
-        self.rect.center = self.pos
-        self.radius = 5
+        self.rect.center = center
+        self.center = center
+        self.frame_nbr = 0
         self.shield = 5
-        self.next = get_ticks()
+        self.then = get_ticks()
 
     def seek(self, target):
-        self.desired = (target - self.pos).normalize() * self.max_speed
-        self.steer = (self.desired - self.vel)
-        if self.steer.length() > 0.4:
-            self.steer.scale_to_length(0.4)
-        return self.steer
+        desired = (target - self.pos).normalize() * MobBullet.MAX_SPEED
+        steer = (desired - self.vel)
+        if steer.length() > 0.4:
+            steer.scale_to_length(0.4)
+        return steer
 
     def update(self):
         now = get_ticks()
-        if now - self.next > 20:
-            self.next = now
-            self.frame += 1
-            if self.frame == 4:
-                self.frame = 0
-        self.acc = vec(0, 0)
-        self.vel += self.acc
-        if self.vel.length() > self.max_speed:
-            self.vel.scale_to_length(self.max_speed)
-        self.pos += self.vel
-        if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
-            self.kill()
-        self.image = self.mobsheet.get_image(BLACK, (
-            self.mob_missile_imgs['x'][self.frame],
-            self.mob_missile_imgs['y'], self.mob_missile_imgs['width'],
-            self.mob_missile_imgs['height']
-        ), (16, 16))
-        self.rect.center = self.pos
+        if now - self.then > 20:
+            self.then = now
+            self.frame_nbr += 1
+            if self.frame_nbr == 4:
+                self.frame_nbr = 0
+            self.acc = vec(0, 0)
+            self.vel += self.acc
+            if self.vel.length() > MobBullet.MAX_SPEED:
+                self.vel.scale_to_length(MobBullet.MAX_SPEED)
+            self.pos += self.vel
+            if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
+                self.kill()
+            self.image = MobBullet.FRAMES[self.frame_nbr]
+            self.rect.center = self.pos
 
 
 class MobMissile(pg.sprite.Sprite):
     '''The mob's guided missiles'''
-    mobsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'mobsheet.png'))
-    image = mobsheet.get_image(BLACK, (0, 0, 16, 40))
-    mob_missile_imgs = {
-        'x': (0, 16, 32, 48),
-        'y': 0,
-        'width': 16,
-        'height': 40
-    }
+
+    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
+                               ).get_image(((0, 16, 32, 48)[i], 0, 16, 40)) for i in range(4))
+    image = FRAMES[0]
+    MAX_SPEED = 6
+    radius = 5
 
     def __init__(self, center):
         super(MobMissile, self).__init__()
-        self.center = center
-        self.frame = 0
-        self.max_speed = 6
         self.rect = self.image.get_rect()
-        self.pos = vec(self.center)
+        self.pos = vec(center)
         self.vel = (
-            game.player.rect.center - self.pos).normalize() * 1.5 * self.max_speed
+            game.player.rect.center - self.pos).normalize() * 1.5 * MobMissile.MAX_SPEED
         self.acc = vec(0, 0)
-        self.rect.center = self.pos
-        self.radius = 5
+        self.rect.center = center
+        self.center = center
+        self.frame_nbr = 0
         self.shield = 5
-        self.next = get_ticks()
+        self.then = get_ticks()
 
     def seek(self, target):
-        self.desired = (target - self.pos).normalize() * self.max_speed
-        self.steer = (self.desired - self.vel)
-        if self.steer.length() > 0.4:
-            self.steer.scale_to_length(0.4)
-        return self.steer
+        desired = (target - self.pos).normalize() * MobMissile.MAX_SPEED
+        steer = (desired - self.vel)
+        if steer.length() > 0.4:
+            steer.scale_to_length(0.4)
+        return steer
 
     def update(self):
         now = get_ticks()
-        if now - self.next > 20:
-            self.next = now
-            self.frame += 1
-            if self.frame == 4:
-                self.frame = 0
-        self.acc = self.seek(game.player.rect.center)
-        self.vel += self.acc
-        if self.vel.length() > self.max_speed:
-            self.vel.scale_to_length(self.max_speed)
-        self.pos += self.vel
-        if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
-            self.kill()
-        self.image = self.mobsheet.get_image(BLACK, (
-            self.mob_missile_imgs['x'][self.frame],
-            self.mob_missile_imgs['y'], self.mob_missile_imgs['width'],
-            self.mob_missile_imgs['height']
-        ))
-        self.rect.center = self.pos
+        if now - self.then > 20:
+            self.then = now
+            self.frame_nbr += 1
+            if self.frame_nbr == 4:
+                self.frame_nbr = 0
+            self.image = MobMissile.FRAMES[self.frame_nbr]
+            self.acc = self.seek(game.player.rect.center)
+            self.vel += self.acc
+            if self.vel.length() > MobMissile.MAX_SPEED:
+                self.vel.scale_to_length(MobMissile.MAX_SPEED)
+            self.pos += self.vel
+            if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
+                self.kill()
+            self.rect.center = self.pos
 
 
 class Asterroid(pg.sprite.Sprite):
     '''The rocks floating in the space'''
-    meteors = tuple(pg.image.load(img).convert() for img in glob(join(IMAGES_FOLDER, 'meteors', '*png')))
+
+    METEORS = tuple(get_image(f, WHITE) for f in glob(join(IMAGES_FOLDER, 'meteors', '*png')))
 
     def __init__(self):
         super(Asterroid, self).__init__()
-        self.image = self.meteors[randrange(len(self.meteors))]
-        self.image_copy = self.image.copy()
-        self.image.set_colorkey(WHITE)
+        self.image = choice(Asterroid.METEORS)
         self.rect = self.image.get_rect()
         self.rect.bottom = 0
         self.rect.x = randrange(WIDTH - self.rect.width)
         self.rect.y = randrange(-200, -100)
+        self.image_copy = self.image.copy()
         self.rotation = 0
+        self.rot_speed = randrange(-8, 8)
+        self.rot_time = get_ticks()
         self.speedx = randrange(-6, 6)
         self.speedy = randrange(4, 6)
-        self.rot_speed = randrange(-8, 8)
-        self.radius = int(self.rect.width * 0.85 / 2)
-        self.shield = int(self.radius / 2)
-        self.rot_time = get_ticks()
+        self.radius = self.rect.width * 0.85 // 2
+        self.shield = self.radius // 2
 
     def rotate(self):
         now = get_ticks()
         if now - self.rot_time > 50:
             self.rot_time = now
             self.rotation = (self.rotation + self.rot_speed) % 360
-            new_image = pg.transform.rotate(self.image_copy, self.rotation)
             center = self.rect.center
-            self.image = new_image
+            self.image = pg.transform.rotate(self.image_copy, self.rotation)
             self.rect = self.image.get_rect()
             self.rect.center = center
-            self.image.set_colorkey(WHITE)
 
     def update(self):
         self.rotate()
         self.rect.x += self.speedx
         self.rect.y += self.speedy
         if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
-            self.rect.x = randrange(WIDTH - self.rect.width)
-            self.rect.y = randrange(-100, -40)
-            self.speedx = randrange(-6, 6)
-            self.speedy = randrange(4, 6)
+            if self.alive():
+                self.rect.x = randrange(WIDTH - self.rect.width)
+                self.rect.y = randrange(-100, -40)
+                self.speedx = randrange(-6, 6)
+                self.speedy = randrange(4, 6)
 
 
 class Explosion(pg.sprite.Sprite):
     '''A class for all types of explosions'''
-    explosion_sheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'explsheet.png'))
-    explosion_imgs = {
+
+    explosion_sheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'explsheet.png'))
+    EXPLOSION_IMGS = {
         'x': tuple(j * 100 for i in range(8) for j in range(9)),
         'y': tuple(i * 100 for i in range(8) for j in range(9)),
         'width': 100,
@@ -815,348 +743,345 @@ class Explosion(pg.sprite.Sprite):
 
     def __init__(self, center, size):
         super(Explosion, self).__init__()
-        self.size = size
-        self.frame = 0
-        self.image = self.explosion_sheet.get_image(BLACK, (0, 0, 100, 100),
-                                                    self.size)
+        self.image = self.explosion_sheet.get_image_advanced((0, 0, 100, 100), size)
         self.rect = self.image.get_rect()
         self.rect.center = center
-        self.time = get_ticks()
+        self.size = size
+        self.frame_nbr = 0
+        self.then = get_ticks()
 
     def update(self):
         now = get_ticks()
-        if now - self.time > 1:
-            self.time = now
-            self.frame += 6
-            if self.frame == len(self.explosion_imgs['x']):
+        if now - self.then > 1:
+            self.then = now
+            self.frame_nbr += 6
+            if self.frame_nbr == len(Explosion.EXPLOSION_IMGS['x']):
                 self.kill()
-            else:
-                center = self.rect.center
-                self.image = self.explosion_sheet.get_image(BLACK, (
-                    self.explosion_imgs['x'][self.frame],
-                    self.explosion_imgs['y'][self.frame],
-                    self.explosion_imgs['width'],
-                    self.explosion_imgs['height']
-                ), self.size)
-                self.rect = self.image.get_rect()
-                self.rect.center = center
+                return
+            center = self.rect.center
+            self.image = Explosion.explosion_sheet.get_image_advanced((
+                Explosion.EXPLOSION_IMGS['x'][self.frame_nbr],
+                Explosion.EXPLOSION_IMGS['y'][self.frame_nbr],
+                Explosion.EXPLOSION_IMGS['width'],
+                Explosion.EXPLOSION_IMGS['height']
+            ), self.size)
+            self.rect = self.image.get_rect()
+            self.rect.center = center
 
 
 class Powerup(pg.sprite.Sprite):
     '''All the POWERUPS: shield, weapon...'''
-    POWERUPS = tuple(pg.image.load(f).convert()
-                     for f in glob(join(IMAGES_FOLDER, 'powerups', '*png')))
+
+    POWERUPS = tuple(get_image(f) for f in glob(join(IMAGES_FOLDER, 'powerups', '*png')))
 
     def __init__(self, center):
         super(Powerup, self).__init__()
         self.type = randrange(3)
         self.image = self.POWERUPS[self.type]
-        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
-        self.center = center
         self.rect.center = center
+        self.centery = center[1]
         self.up = True
 
     def update(self):
-        if self.rect.centery < self.center[1] - 50:
+        if self.rect.centery < self.centery - 50:
             self.up = False
+        if self.rect.top > HEIGHT:
+            self.kill()
+            return
         if self.up:
             self.rect.y -= game.dt / 2
         else:
             self.rect.y += game.dt / 4
-        if self.rect.top > HEIGHT:
-            self.kill()
 
 
 class GreyMob(pg.sprite.Sprite):
     '''elongated grey alienship'''
     image = SpriteSheet(join(IMAGES_FOLDER, "mobs", 'greymob.png')
-                                 ).get_image(BLACK, size=(100, 100))
+                        ).get_image_advanced(size=(100, 100))
+    count = 0
+    duration = get_ticks()
+    next_time = duration
+    its_time = True
+    MAX_SPEED = 10
+    APPROACH_RADIUS = 100
+    STEER_FORCE = 2
+    radius = 50
 
     def __init__(self, x, y):
         super(GreyMob, self).__init__()
-        self.max_speed = 10
-        self.approach_radius = 100
-        self.x = x
-        self.y = y
-        self.xd = x
-        self.yd = y + 200
-        self.steer_force = 2
         self.rect = self.image.get_rect()
-        self.pos = vec(self.x, self.y)
-        self.vel = vec(0, self.max_speed)
+        self.x = x
+        self.y = y + 200
+        self.pos = vec(x, y)
+        self.vel = vec(0, GreyMob.MAX_SPEED)
         self.acc = vec(0, 0)
-        self.radius = 50
+        self.rect.center = self.pos
         self.shield = 17
         self.right = True
-        self.next = get_ticks()
-        self.shoot_time = self.next
-        self.dtime = self.next
-        self.rect.center = self.pos
-
-    def shoot(self):
         now = get_ticks()
+        self.shoot_time = now
+        self.dtime = now
+        GreyMob.count += 1
+
+    def shoot(self, now):
         if now - self.shoot_time > 3000:
             self.shoot_time = now
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
     def seek_with_approach(self, target):
-        self.desired = (target - self.pos)
-        dist = self.desired.length()
-        self.desired.normalize_ip()
-        if dist < self.approach_radius:
-            self.desired *= dist / self.approach_radius * self.max_speed
+        desired = (target - self.pos)
+        dist = desired.length()
+        desired.normalize_ip()
+        if dist < GreyMob.APPROACH_RADIUS:
+            desired *= dist / GreyMob.APPROACH_RADIUS * GreyMob.MAX_SPEED
         else:
-            self.desired *= self.max_speed
-        self.steer = (self.desired - self.vel)
-        if self.steer.length() > self.steer_force:
-            self.steer.scale_to_length(self.steer_force)
-        return self.steer
+            desired *= GreyMob.MAX_SPEED
+        steer = (desired - self.vel)
+        if steer.length() > GreyMob.STEER_FORCE:
+            steer.scale_to_length(GreyMob.STEER_FORCE)
+        return steer
+
+    @classmethod
+    def get(cls, game, now):
+        if now - cls.duration > 10000:
+            cls.duration = now
+            cls.its_time = True
+        if now - cls.next_time > 500 and cls.its_time:
+            cls.next_time = now
+            cls(200, -50).add(game.all_sprites, game.mobs)
+            if cls.count > 5:
+                cls.count = 0
+                cls.its_time = False
 
     def update(self):
-        self.shoot()
         now = get_ticks()
-        if not ((self.xd, self.yd) - self.pos).length() == 0:
-            self.acc = self.seek_with_approach((self.xd, self.yd))
+        self.shoot(now)
+        if not ((self.x, self.y) - self.pos).length() == 0:
+            self.acc = self.seek_with_approach((self.x, self.y))
         if now - self.dtime > 2000:
             self.dtime = now
-            self.yd += 400
+            self.y += 400
             if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
                 self.kill()
+                return
             if self.right:
-                self.xd += 100
+                self.x += 100
                 self.right = False
             else:
-                self.xd -= 100
+                self.x -= 100
                 self.right = True
         self.vel += self.acc
-        if self.vel.length() > self.max_speed:
-            self.vel.scale_to_length(self.max_speed)
+        if self.vel.length() > GreyMob.MAX_SPEED:
+            self.vel.scale_to_length(GreyMob.MAX_SPEED)
         self.pos += self.vel
         self.rect.center = self.pos
 
 
 class RedMob(pg.sprite.Sprite):
     '''The elongted red alienship'''
+    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", 'redmob.png')
+                        ).get_image_advanced(size=(58, 100))
+    count = 0
+    duration = get_ticks()
+    next_time = duration
+    its_time = False
+    MAX_SPEED = 10
+    radius = 40
 
     def __init__(self, x, y):
         super(RedMob, self).__init__()
-        self.max_speed = 10
-        self.approach_radius = 100
-        self.image = SpriteSheet(join(IMAGES_FOLDER, "mobs", 'redmob.png')
-                                 ).get_image(BLACK, size=(58, 100))
         self.rect = self.image.get_rect()
-        self.x = x
-        self.y = y
-        self.xd = x
-        self.yd = y + 200
-        self.steer_force = 2
-        self.pos = vec(self.x, self.y)
-        self.vel = vec(0, self.max_speed)
+        self.pos = vec(x, y)
+        self.vel = vec(0, RedMob.MAX_SPEED)
         self.acc = vec(0, 0)
-        self.radius = 40
+        self.rect.center = self.pos
         self.shield = 10
         self.right = True
-        self.next = get_ticks()
-        self.shoot_time = self.next
-        self.dtime = self.next
-        self.rect.center = self.pos
         self.c = 0
-        self.then = self.next
-
-    def shoot(self):
         now = get_ticks()
+        self.shoot_time = now
+        self.dtime = now
+        self.then = now
+        RedMob.count += 1
+
+    def shoot(self, now):
         if now - self.shoot_time > 3000:
             self.shoot_time = now
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
-    def seek_with_approach(self, target):
-        self.desired = (target - self.pos)
-        dist = self.desired.length()
-        self.desired.normalize_ip()
-        if dist < self.approach_radius:
-            self.desired *= dist / self.approach_radius * self.max_speed
-        else:
-            self.desired *= self.max_speed
-        self.steer = (self.desired - self.vel)
-        if self.steer.length() > self.steer_force:
-            self.steer.scale_to_length(self.steer_force)
-        return self.steer
+    @classmethod
+    def get(cls, game, now):
+        if now - cls.duration > 8000:
+            cls.duration = now
+            cls.its_time = True
+        if now - cls.next_time > 200 and cls.its_time:
+            cls.next_time = now
+            cls(500, -200).add(game.all_sprites, game.mobs)
+            if cls.count > 5:
+                cls.count = 0
+                cls.its_time = False
 
     def update(self):
-        self.shoot()
         now = get_ticks()
+        self.shoot(now)
         if now - self.then > 300:
             self.then = now
             self.c = (self.c + 5) % 360
-            # self.SpriteSheet = (self.SpriteSheet + 1) % 360
-        self.acc = vec(cos(self.c) * self.max_speed - 10, 10)
-        # if not ((self.xd, self.yd) - self.pos).length() == 0:
-        # self.acc = self.seek_with_approach((self.xd, self.yd))
+        self.acc = vec(cos(self.c) * RedMob.MAX_SPEED - 10, 10)
         if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
             self.kill()
+            return
         if now - self.dtime > 2000:
             self.dtime = now
-            self.yd += 400
             if self.right:
-                self.xd += 100
                 self.right = False
             else:
-                self.xd -= 100
                 self.right = True
         self.vel += self.acc
-        if self.vel.length() > self.max_speed:
-            self.vel.scale_to_length(self.max_speed)
+        if self.vel.length() > RedMob.MAX_SPEED:
+            self.vel.scale_to_length(RedMob.MAX_SPEED)
         self.pos += self.vel
         self.rect.center = self.pos
 
 
 class EyeLikeMob(pg.sprite.Sprite):
     '''The eye-like alienship'''
-    mobsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'eyelike_mobsheet.png'))
-    image = mobsheet.get_image(rect=(0, 0, 31, 80))
-    mob_imgs = {
-        'x': (0, 31, 63, 95, 127, 175, 223, 270),
-        'y': 0,
-        'width': (31, 32, 32, 32, 48, 48, 48, 48),
-        'height': 80
-    }
+
+    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'eyelike_mobsheet.png')
+                               ).get_image(((0, 31, 63, 95, 127, 175, 223, 270)[i],
+                                            0, (31, 32, 32, 32, 48, 48, 48, 48)[i], 80))
+                   for i in range(8))
+    image = FRAMES[0]
+    count = 0
+    duration = get_ticks()
+    next_time = duration
+    its_time = True
 
     def __init__(self, y):
         super(EyeLikeMob, self).__init__()
-        self.frame = 0
-        self.y = y
-        self.yd = self.y
-        self.max_speed = 4
-        self.steer_force = 0.2
-        self.approach_radius = 100
+        self.frame_nbr = 0
         self.rect = self.image.get_rect()
-        self.pos = vec(WIDTH + 40, self.y)
-        self.vel = vec(-self.max_speed, 0)
-        self.acc = vec(0, 0)
-        self.xd = (-100, WIDTH + 100)[randrange(2)]
+        self.rect.center = (WIDTH + 40, y)
         self.radius = 50
         self.shield = 12
-        self.next = get_ticks()
-        self.shoot_time = self.next
+        self.then = get_ticks()
+        self.shoot_time = self.then
         self.switch = False
-        self.rect.center = self.pos
+        EyeLikeMob.count += 1
 
-    def shoot(self):
-        now = get_ticks()
+    def shoot(self, now):
         if now - self.shoot_time > 4000:
             self.shoot_time = now
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
-    # def seek_with_approach(self, target):
-    #     self.desired = (target - self.pos)
-    #     dist = self.desired.length()
-    #     self.desired.normalize_ip()
-    #     if dist < self.approach_radius:
-    #         self.desired *= dist / self.approach_radius * self.max_speed
-    #     else:
-    #         self.desired *= self.max_speed
-    #     self.steer = (self.desired - self.vel)
-    #     if self.steer.length() > self.steer_force:
-    #         self.steer.scale_to_length(self.steer_force)
-    #     return self.steer
+    @classmethod
+    def get(cls, game, now):
+        if now - cls.next_time > 12000:
+            cls.next_time = now
+            if game.rand < 0.9:
+                cls.count = 0
+                game.rand_pos = randrange(40, HEIGHT // 3)
+        if now - cls.duration > 500 and cls.count < 12:
+            cls.duration = now
+            cls(game.rand_pos).add(game.all_sprites, game.mobs)
 
     def update(self):
-        self.shoot()
         now = get_ticks()
-        if now - self.next > 500:
-            self.next = now
-            self.frame += 1
-            if self.frame == len(self.mob_imgs['x']):
-                self.frame = 0
-        self.image = self.mobsheet.get_image(
-            WHITE, (self.mob_imgs['x'][self.frame], self.mob_imgs['y'],
-                    self.mob_imgs['width'][self.frame],
-                    self.mob_imgs['height']))
+        self.shoot(now)
+        if now - self.then > 500:
+            self.then = now
+            self.frame_nbr += 1
+            if self.frame_nbr == 8:
+                self.frame_nbr = 0
+            self.image = EyeLikeMob.FRAMES[self.frame_nbr]
         if self.rect.right < 0:
             self.kill()
-        self.vel += self.acc
-        self.pos += self.vel
-        self.rect.center = self.pos
+            return
+        self.rect.x -= 4
 
 
 class RoundMob(pg.sprite.Sprite):
     '''The round alienship'''
-    mobsheet = SpriteSheet(join(IMAGES_FOLDER, "spritesheets", 'mobsheet.png'))
-    mob_imgs = {
-        'x': (0, 95, 190, 285, 385, 480, 575),
-        'y': (45, 270, 496, 718),
-        'width': (95, 95, 95, 100, 95, 95, 95),
-        'height': 90
-    }
+
+    FRAMES = tuple(tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
+                                     ).get_image(
+        ((0, 95, 190, 285, 385, 480, 575)[frame],
+         rand,
+         (95, 95, 95, 100, 95, 95, 95)[frame],
+         90)) for frame in range(7))
+        for rand in (45, 270, 496, 718))
+    next_time = get_ticks()
+    MAX_SPEED = 10
+    STEER_FORCE = 0.2
+    APPROACH_RADIUS = 100
+    radius = 50
 
     def __init__(self):
         super(RoundMob, self).__init__()
-        start_pt = (randrange(-50, 0), randrange(WIDTH, WIDTH + 50))[randrange(2)]
-        self.frame = 0
-        self.yd = randrange(WIDTH / 2)
-        self.max_speed = 10
-        self.steer_force = 0.2
-        self.approach_radius = 100
-        self.ch = choice(self.mob_imgs['y'])
-        self.image = self.mobsheet.get_image(BLACK, (0, self.ch, 95, 90))
+        start_pt = (-50, WIDTH + 50)[randrange(2)]
+        self.ch = randrange(4)
+        self.x = start_pt
+        self.y = randrange(WIDTH // 2)
+        self.image = RoundMob.FRAMES[self.ch][0]
         self.rect = self.image.get_rect()
-        self.pos = vec(start_pt, self.yd)
-        self.vel = vec(-self.max_speed, 0)
+        self.pos = vec(start_pt, self.y)
+        self.vel = vec(-RoundMob.MAX_SPEED, 0)
         self.acc = vec(0, 0)
-        self.xd = start_pt
-        self.radius = 50
-        self.shield = 300
-        self.next = get_ticks()
-        self.shoot_time = self.next
         self.rect.center = self.pos
-        self.switch = WIDTH <= start_pt <= WIDTH + 50
+        self.frame_nbr = 0
+        self.shield = 300
+        self.then = get_ticks()
+        self.shoot_time = self.then
+        self.switch = start_pt == WIDTH + 50
 
-    def shoot(self):
-        now = get_ticks()
+    def shoot(self, now):
         if now - self.shoot_time > 2500:
             self.shoot_time = now
-            x = randrange(2)
-            if x == 0:
+            if randrange(2) == 0:
                 MobMissile(self.rect.center).add(game.all_sprites, game.mobs)
             else:
                 MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
     def seek_with_approach(self, target):
-        self.desired = (target - self.pos)
-        dist = self.desired.length()
-        self.desired.normalize_ip()
-        if dist < self.approach_radius:
-            self.desired *= dist / self.approach_radius * self.max_speed
+        desired = (target - self.pos)
+        dist = desired.length()
+        desired.normalize_ip()
+        if dist < RoundMob.APPROACH_RADIUS:
+            desired *= dist / RoundMob.APPROACH_RADIUS * RoundMob.MAX_SPEED
         else:
-            self.desired *= self.max_speed
-        self.steer = (self.desired - self.vel)
-        if self.steer.length() > self.steer_force:
-            self.steer.scale_to_length(self.steer_force)
-        return self.steer
+            desired *= RoundMob.MAX_SPEED
+        steer = (desired - self.vel)
+        if steer.length() > RoundMob.STEER_FORCE:
+            steer.scale_to_length(RoundMob.STEER_FORCE)
+        return steer
+
+    @classmethod
+    def get(cls, game, now):
+        if now - cls.next_time > 6000:
+            cls.next_time = now
+            if game.rand > 0.6:
+                cls().add(game.all_sprites, game.mobs)
 
     def update(self):
-        self.shoot()
         now = get_ticks()
-        if now - self.next > 500:
-            self.next = now
-            self.frame += 1
-            if self.frame == len(self.mob_imgs['x']):
-                self.frame = 0
-        self.image = self.mobsheet.get_image(
-            BLACK, (self.mob_imgs['x'][self.frame], self.ch,
-                    self.mob_imgs['width'][self.frame],
-                    self.mob_imgs['height']))
-        if self.xd < (WIDTH - 100) // 2:
+        self.shoot(now)
+        if now - self.then > 500:
+            self.then = now
+            self.frame_nbr += 1
+            if self.frame_nbr == 7:
+                self.frame_nbr = 0
+            self.image = RoundMob.FRAMES[self.ch][self.frame_nbr]
+        if self.x < (WIDTH - 100) // 2:
             self.switch = False
-        elif self.xd > (WIDTH + 100) // 2:
+        elif self.x > (WIDTH + 100) // 2:
             self.switch = True
         if self.switch:
-            self.xd -= game.dt // 10
+            self.x -= game.dt // 10
         else:
-            self.xd += game.dt // 10
-        if (vec(self.xd, self.yd) - self.pos).length():
-            self.acc = self.seek_with_approach((self.xd, self.yd))
+            self.x += game.dt // 10
+        if (vec(self.x, self.y) - self.pos).length():
+            self.acc = self.seek_with_approach((self.x, self.y))
         self.vel += self.acc
         self.pos += self.vel
         self.rect.center = self.pos
