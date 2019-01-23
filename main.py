@@ -532,6 +532,7 @@ class Player(pg.sprite.Sprite):
 class Bullet(pg.sprite.Sprite):
     '''The player's lazer bullets'''
 
+    __slots__ = ("direction",)
     image = get_image(join(IMAGES_FOLDER, 'guns', 'laser.png'))
 
     def __init__(self, x, y, direction=0, rot=0):
