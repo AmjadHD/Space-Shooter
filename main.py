@@ -119,9 +119,9 @@ class Game:
                     quit()
 
             screen.fill(BLACK)
-            write(screen, "Space Shooter", (WIDTH / 2, HEIGHT / 4), aconcepto26, WHITE)
+            write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
             write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                  (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
+                  (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
             now = get_ticks()
             if now - self.blink_time > 1000:
                 self.blink_time = now
@@ -248,10 +248,10 @@ class Game:
             write(screen, f'{player.shield}%', (50, 10), aconcepto14, RED)
 
     def get_mobs(self):
-        GreyMob.get(self, self.now)
-        RedMob.get(self, self.now)
-        RoundMob.get(self, self.now)
-        EyeLikeMob.get(self, self.now)
+        GreyMob.get(self.now)
+        RedMob.get(self.now)
+        RoundMob.get(self.now)
+        EyeLikeMob.get(self.now)
         if len(self.mobs) < 5:
             for i in range(7):
                 Asterroid().add(self.all_sprites, self.mobs)
@@ -598,7 +598,7 @@ class MobBullet(pg.sprite.Sprite):
 
     FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
                                ).get_image_advanced(
-        ((0, 32, 64, 128)[i], 640, 32, 32), (16, 16)) for i in range(4))
+        (x, 640, 32, 32), (16, 16)) for x in (0, 32, 64, 128))
     image = FRAMES[0]
     MAX_SPEED = 6
     radius = 5
@@ -645,7 +645,7 @@ class MobMissile(pg.sprite.Sprite):
     '''The mob's guided missiles'''
 
     FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
-                               ).get_image(((0, 16, 32, 48)[i], 0, 16, 40)) for i in range(4))
+                               ).get_image((x, 0, 16, 40)) for x in (0, 16, 32, 48))
     image = FRAMES[0]
     MAX_SPEED = 6
     radius = 5
@@ -844,7 +844,7 @@ class GreyMob(pg.sprite.Sprite):
         return steer
 
     @classmethod
-    def get(cls, game, now):
+    def get(cls, now):
         if now - cls.duration > 10000:
             cls.duration = now
             cls.its_time = True
@@ -912,7 +912,7 @@ class RedMob(pg.sprite.Sprite):
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
     @classmethod
-    def get(cls, game, now):
+    def get(cls, now):
         if now - cls.duration > 8000:
             cls.duration = now
             cls.its_time = True
@@ -958,13 +958,13 @@ class EyeLikeMob(pg.sprite.Sprite):
     duration = get_ticks()
     next_time = duration
     its_time = True
+    radius = 50
 
     def __init__(self, y):
         super(EyeLikeMob, self).__init__()
         self.frame_nbr = 0
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH + 40, y)
-        self.radius = 50
         self.shield = 12
         self.then = get_ticks()
         self.shoot_time = self.then
@@ -972,12 +972,12 @@ class EyeLikeMob(pg.sprite.Sprite):
         EyeLikeMob.count += 1
 
     def shoot(self, now):
-        if now - self.shoot_time > 4000:
+        if now - self.shoot_time > 3500:
             self.shoot_time = now
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
     @classmethod
-    def get(cls, game, now):
+    def get(cls, now):
         if now - cls.next_time > 12000:
             cls.next_time = now
             if game.rand < 0.9:
@@ -1007,11 +1007,11 @@ class RoundMob(pg.sprite.Sprite):
 
     FRAMES = tuple(tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
                                      ).get_image(
-        ((0, 95, 190, 285, 385, 480, 575)[frame],
-         rand,
-         (95, 95, 95, 100, 95, 95, 95)[frame],
-         90)) for frame in range(7))
-        for rand in (45, 270, 496, 718))
+        ((0, 95, 190, 285, 385, 480, 575)[i],
+         y,
+         (95, 95, 95, 100, 95, 95, 95)[i],
+         90)) for i in range(7))
+        for y in (45, 270, 496, 718))
     next_time = get_ticks()
     MAX_SPEED = 10
     STEER_FORCE = 0.2
@@ -1058,7 +1058,7 @@ class RoundMob(pg.sprite.Sprite):
         return steer
 
     @classmethod
-    def get(cls, game, now):
+    def get(cls, now):
         if now - cls.next_time > 6000:
             cls.next_time = now
             if game.rand > 0.6:
