@@ -253,7 +253,7 @@ class Game:
         RoundMob.get(self.now)
         EyeLikeMob.get(self.now)
         if len(self.mobs) < 5:
-            for i in range(7):
+            for i in range(5):
                 Asterroid().add(self.all_sprites, self.mobs)
 
     def handle_collisions(self):
@@ -735,7 +735,7 @@ class Explosion(pg.sprite.Sprite):
     '''A class for all types of explosions'''
 
     explosion_sheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'explsheet.png'))
-    EXPLOSION_IMGS = {
+    METADATA = {
         'x': tuple(j * 100 for i in range(8) for j in range(9)),
         'y': tuple(i * 100 for i in range(8) for j in range(9)),
         'width': 100,
@@ -756,15 +756,15 @@ class Explosion(pg.sprite.Sprite):
         if now - self.then > 1:
             self.then = now
             self.frame_nbr += 6
-            if self.frame_nbr == len(Explosion.EXPLOSION_IMGS['x']):
+            if self.frame_nbr == len(Explosion.METADATA['x']):
                 self.kill()
                 return
             center = self.rect.center
             self.image = Explosion.explosion_sheet.get_image_advanced((
-                Explosion.EXPLOSION_IMGS['x'][self.frame_nbr],
-                Explosion.EXPLOSION_IMGS['y'][self.frame_nbr],
-                Explosion.EXPLOSION_IMGS['width'],
-                Explosion.EXPLOSION_IMGS['height']
+                Explosion.METADATA['x'][self.frame_nbr],
+                Explosion.METADATA['y'][self.frame_nbr],
+                Explosion.METADATA['width'],
+                Explosion.METADATA['height']
             ), self.size)
             self.rect = self.image.get_rect()
             self.rect.center = center
