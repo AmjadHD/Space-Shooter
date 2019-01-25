@@ -169,7 +169,7 @@ class Game:
             screen.fill(BLACK)
             write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
             write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                  (WIDTH / 2, HEIGHT / 2), aconcepto14, WHITE)
+                  (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
             if now - self.blink_time > 1000:
                 self.blink_time = now
                 self.blink = not self.blink
@@ -1023,7 +1023,7 @@ class RoundMob(pg.sprite.Sprite):
         start_pt = (-50, WIDTH + 50)[randrange(2)]
         self.ch = randrange(4)
         self.x = start_pt
-        self.y = randrange(WIDTH // 2)
+        self.y = randrange(100, HEIGHT // 2)
         self.image = RoundMob.FRAMES[self.ch][0]
         self.rect = self.image.get_rect()
         self.pos = vec(start_pt, self.y)
