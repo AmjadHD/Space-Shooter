@@ -587,7 +587,7 @@ class Missile(pg.sprite.Sprite):
                                          self.vel.angle_to(self.normal) + 180)
         if self.vel.length() > Missile.MAX_SPEED:
             self.vel.scale_to_length(Missile.MAX_SPEED)
-        self.pos += self.vel
+        self.pos += self.vel * game.dt // 10
         if self.pos.x < 0 or self.pos.x > WIDTH or self.pos.y > HEIGHT or self.pos.y < 0:
             self.kill()
         self.rect.center = self.pos
@@ -634,7 +634,7 @@ class MobBullet(pg.sprite.Sprite):
             self.vel += self.acc
             if self.vel.length() > MobBullet.MAX_SPEED:
                 self.vel.scale_to_length(MobBullet.MAX_SPEED)
-            self.pos += self.vel
+            self.pos += self.vel * game.dt // 10
             if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
                 self.kill()
             self.image = MobBullet.FRAMES[self.frame_nbr]
@@ -682,7 +682,7 @@ class MobMissile(pg.sprite.Sprite):
             self.vel += self.acc
             if self.vel.length() > MobMissile.MAX_SPEED:
                 self.vel.scale_to_length(MobMissile.MAX_SPEED)
-            self.pos += self.vel
+            self.pos += self.vel * game.dt // 10
             if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
                 self.kill()
             self.rect.center = self.pos
@@ -721,8 +721,8 @@ class Asterroid(pg.sprite.Sprite):
 
     def update(self):
         self.rotate()
-        self.rect.x += self.speedx
-        self.rect.y += self.speedy
+        self.rect.x += self.speedx * game.dt // 10
+        self.rect.y += self.speedy * game.dt // 10
         if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
             if self.alive():
                 self.rect.x = randrange(WIDTH - self.rect.width)
@@ -763,8 +763,7 @@ class Explosion(pg.sprite.Sprite):
             self.image = Explosion.explosion_sheet.get_image_advanced((
                 Explosion.METADATA['x'][self.frame_nbr],
                 Explosion.METADATA['y'][self.frame_nbr],
-                Explosion.METADATA['width'],
-                Explosion.METADATA['height']
+                100, 100
             ), self.size)
             self.rect = self.image.get_rect()
             self.rect.center = center
@@ -791,9 +790,9 @@ class Powerup(pg.sprite.Sprite):
             self.kill()
             return
         if self.up:
-            self.rect.y -= game.dt / 2
+            self.rect.y -= game.dt // 2
         else:
-            self.rect.y += game.dt / 4
+            self.rect.y += game.dt // 4
 
 
 class GreyMob(pg.sprite.Sprite):
@@ -875,7 +874,7 @@ class GreyMob(pg.sprite.Sprite):
         self.vel += self.acc
         if self.vel.length() > GreyMob.MAX_SPEED:
             self.vel.scale_to_length(GreyMob.MAX_SPEED)
-        self.pos += self.vel
+        self.pos += self.vel * game.dt // 10
         self.rect.center = self.pos
 
 
@@ -895,7 +894,7 @@ class RedMob(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.pos = vec(x, y)
         self.vel = vec(0, RedMob.MAX_SPEED)
-        self.acc = vec(0, 0)
+        self.acc = vec(0, 10)
         self.rect.center = self.pos
         self.shield = 10
         self.right = True
@@ -929,20 +928,17 @@ class RedMob(pg.sprite.Sprite):
         if now - self.then > 300:
             self.then = now
             self.c = (self.c + 5) % 360
-        self.acc = vec(cos(self.c) * RedMob.MAX_SPEED - 10, 10)
+            self.acc.x = cos(self.c) * RedMob.MAX_SPEED - 10
         if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
             self.kill()
             return
         if now - self.dtime > 2000:
             self.dtime = now
-            if self.right:
-                self.right = False
-            else:
-                self.right = True
+            self.right = not self.right
         self.vel += self.acc
         if self.vel.length() > RedMob.MAX_SPEED:
             self.vel.scale_to_length(RedMob.MAX_SPEED)
-        self.pos += self.vel
+        self.pos += self.vel * game.dt // 10
         self.rect.center = self.pos
 
 
@@ -999,7 +995,7 @@ class EyeLikeMob(pg.sprite.Sprite):
         if self.rect.right < 0:
             self.kill()
             return
-        self.rect.x -= 4
+        self.rect.x -= game.dt // 3
 
 
 class RoundMob(pg.sprite.Sprite):
