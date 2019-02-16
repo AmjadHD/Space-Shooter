@@ -284,15 +284,14 @@ class Game:
 class Player(pg.sprite.Sprite):
     '''The spaceship sprite'''
 
-    FRAMES = tuple((shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192,
-                                                  (32, 32, 30, 30)[i], 50), (40, 63)),
-                    shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192,
-                                                  (32, 32, 30, 30)[i], 50), (40, 63), horizontally=True)
-                    ) for i in range(4))
+    FRAMES = (tuple(shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192, (32, 32, 30, 30)[i], 50), (40, 63))
+                    for i in range(4)),
+              tuple(shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192, (32, 32, 30, 30)[i], 50), (40, 63), horizontally=True)
+                    for i in range(4)))
 
     def __init__(self):
         super(Player, self).__init__()
-        self.image = Player.FRAMES[0][False]
+        self.image = Player.FRAMES[False][0]
         self.rect = self.image.get_rect()
         self.rect.bottom = HEIGHT - 10
         self.rect.centerx = WIDTH // 2
@@ -352,7 +351,7 @@ class Player(pg.sprite.Sprite):
                 self.rect.bottom = HEIGHT
         if key_state[pg.K_SPACE] or self.open_fire:
             self.shoot()
-        self.image = Player.FRAMES[self.frame_nbr][self.flip]
+        self.image = Player.FRAMES[self.flip][self.frame_nbr]
 
     def hide(self):
         self.hidden = True
