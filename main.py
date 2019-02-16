@@ -4,14 +4,14 @@ from random import choice, random, randrange
 from glob import glob
 from os.path import join
 
-import pygame as pg
-from pygame.mixer import music as music_player
-from pygame.math import Vector2 as vec
-from pygame.time import get_ticks
-from pygame.freetype import SysFont
+import pygame as pg  # type: ignore
+from pygame.mixer import music as music_player  # type: ignore
+from pygame.math import Vector2 as vec  # type: ignore
+from pygame.time import get_ticks  # type: ignore
+from pygame.freetype import SysFont  # type: ignore
 
-from utils import SpriteSheet, write, get_image
-from settings import *
+from utils import SpriteSheet, write, get_image  # type: ignore
+from settings import *  # type: ignore
 
 
 pg.init()
