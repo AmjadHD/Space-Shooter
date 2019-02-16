@@ -193,6 +193,7 @@ class Game:
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_n:
                         self.paused = False
+                        music_player.unpause()
                         screen.fill(BLACK)
                         pg.display.flip()
                         return
@@ -207,6 +208,7 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_n:
                     self.paused = True
+                    music_player.pause()
                 elif event.key == pg.K_w:
                     self.player.weapon += 1
                     if self.player.weapon > self.player.power_level:
@@ -267,16 +269,13 @@ class Game:
         self.player.set_power(self.now)
 
     def play_music(self):
-        if not music_player.get_busy():
-            music_player.load(MUSIC[self.current_track])
-            music_player.play(1)
-            self.current_track += 1
-            if self.current_track == len(MUSIC):
-                self.current_track = 0
-        if self.paused:
-            music_player.pause()
-        else:
-            music_player.unpause()
+        if music_player.get_busy():
+            return
+        music_player.load(MUSIC[self.current_track])
+        music_player.play(1)
+        self.current_track += 1
+        if self.current_track == len(MUSIC):
+            self.current_track = 0
 
 
 # the sprites:
@@ -615,7 +614,7 @@ class MobBullet(pg.sprite.Sprite):
 
     def seek(self, target):
         desired = (target - self.pos).normalize() * MobBullet.MAX_SPEED
-        steer = (desired - self.vel)
+        steer = desired - self.vel
         if steer.length() > 0.4:
             steer.scale_to_length(0.4)
         return steer
@@ -826,14 +825,14 @@ class GreyMob(pg.sprite.Sprite):
             MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
     def seek_with_approach(self, target):
-        desired = (target - self.pos)
+        desired = target - self.pos
         dist = desired.length()
         desired.normalize_ip()
         if dist < GreyMob.APPROACH_RADIUS:
             desired *= dist / GreyMob.APPROACH_RADIUS * GreyMob.MAX_SPEED
         else:
             desired *= GreyMob.MAX_SPEED
-        steer = (desired - self.vel)
+        steer = desired - self.vel
         if steer.length() > GreyMob.STEER_FORCE:
             steer.scale_to_length(GreyMob.STEER_FORCE)
         return steer
