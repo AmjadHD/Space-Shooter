@@ -652,8 +652,7 @@ class MobMissile(pg.sprite.Sprite):
         super(MobMissile, self).__init__()
         self.rect = self.image.get_rect()
         self.pos = vec(center)
-        self.vel = (
-            game.player.rect.center - self.pos).normalize() * 1.5 * MobMissile.MAX_SPEED
+        self.vel = (game.player.rect.center - self.pos).normalize() * MobMissile.MAX_SPEED
         self.acc = vec(0, 0)
         self.rect.center = center
         self.center = center
