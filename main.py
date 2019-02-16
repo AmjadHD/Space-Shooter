@@ -37,7 +37,6 @@ aconcepto14 = SysFont("a_Concepto", 14)
 
 # the game
 class Game:
-    screen = screen
 
     def __init__(self):
         with open("highscore.txt", "r") as hsf:
