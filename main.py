@@ -347,7 +347,7 @@ class Player(pg.sprite.Sprite):
             self.rect.y += step
             if HEIGHT <= self.rect.bottom < HEIGHT + 100:
                 self.rect.bottom = HEIGHT
-        if key_state[pg.K_SPACE] or self.open_fire:
+        if self.open_fire or key_state[pg.K_SPACE]:
             self.shoot()
         self.image = Player.FRAMES[self.flip][self.frame_nbr]
 
@@ -362,76 +362,78 @@ class Player(pg.sprite.Sprite):
         Missile((self.rect.centerx, self.rect.top)).add(game.all_sprites, game.bullets)
 
     def shoot(self):
+        if self.hidden:
+            return
+
         now = get_ticks()
-        if not self.hidden:
-            if now - self.shoot_time > 250:
-                self.shoot_time = now
-                if self.weapon == 1:
-                    SOUNDS[2].play()
-                    Bullet(self.rect.centerx, self.rect.top).add(
-                        game.all_sprites, game.bullets)
-                elif self.weapon == 2:
-                    SOUNDS[3].play()
-                    Bullet(self.rect.left, self.rect.centery).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery).add(
-                        game.all_sprites, game.bullets)
-                elif self.weapon == 3:
-                    SOUNDS[2].play()
-                    SOUNDS[3].play()
-                    Bullet(self.rect.left, self.rect.centery, -1, 30).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery, 1, -30).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.centerx, self.rect.top).add(
-                        game.all_sprites, game.bullets)
-                elif self.weapon == 5:
-                    SOUNDS[2].play()
-                    SOUNDS[3].play()
-                    Bullet(self.rect.left, self.rect.centery).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.centerx, self.rect.top).add(
-                        game.all_sprites, game.bullets)
-                elif self.weapon == 6:
-                    SOUNDS[2].play()
-                    SOUNDS[3].play()
-                    Bullet(self.rect.left, self.rect.centery).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.centerx, self.rect.top).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.left, self.rect.centery, -1.2, 35).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery, 1.2, -35).add(
-                        game.all_sprites, game.bullets)
-                elif self.weapon == 7:
-                    SOUNDS[2].play()
-                    SOUNDS[3].play()
-                    self.launch_missile()
-                    Bullet(self.rect.left, self.rect.centery, -0.6, 16).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery, 0.6, -16).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.centerx, self.rect.top).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.left, self.rect.centery, -1.2, 35).add(
-                        game.all_sprites, game.bullets)
-                    Bullet(self.rect.right, self.rect.centery, 1.2, -35).add(
-                        game.all_sprites, game.bullets)
-            if now - self.missile_time > 300 and self.weapon == 6:
-                self.missile_time = now
-                self.launch_missile()
-            elif now - self.missile_time > 400 and self.weapon == 5:
-                self.missile_time = now
-                self.launch_missile()
-            elif now - self.missile_time > 500 and self.weapon == 4:
-                self.missile_time = now
+        if now - self.shoot_time > 250:
+            self.shoot_time = now
+            if self.weapon == 1:
+                SOUNDS[2].play()
+                Bullet(self.rect.centerx, self.rect.top).add(
+                    game.all_sprites, game.bullets)
+            elif self.weapon == 2:
+                SOUNDS[3].play()
+                Bullet(self.rect.left, self.rect.centery).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery).add(
+                    game.all_sprites, game.bullets)
+            elif self.weapon == 3:
+                SOUNDS[2].play()
+                SOUNDS[3].play()
+                Bullet(self.rect.left, self.rect.centery, -1, 30).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery, 1, -30).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.centerx, self.rect.top).add(
+                    game.all_sprites, game.bullets)
+            elif self.weapon == 5:
+                SOUNDS[2].play()
+                SOUNDS[3].play()
+                Bullet(self.rect.left, self.rect.centery).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.centerx, self.rect.top).add(
+                    game.all_sprites, game.bullets)
+            elif self.weapon == 6:
+                SOUNDS[2].play()
+                SOUNDS[3].play()
+                Bullet(self.rect.left, self.rect.centery).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.centerx, self.rect.top).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.left, self.rect.centery, -1.2, 35).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery, 1.2, -35).add(
+                    game.all_sprites, game.bullets)
+            elif self.weapon == 7:
                 SOUNDS[2].play()
                 SOUNDS[3].play()
                 self.launch_missile()
+                Bullet(self.rect.left, self.rect.centery, -0.6, 16).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery, 0.6, -16).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.centerx, self.rect.top).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.left, self.rect.centery, -1.2, 35).add(
+                    game.all_sprites, game.bullets)
+                Bullet(self.rect.right, self.rect.centery, 1.2, -35).add(
+                    game.all_sprites, game.bullets)
+        if now - self.missile_time > 300 and self.weapon == 6:
+            self.missile_time = now
+            self.launch_missile()
+        elif now - self.missile_time > 400 and self.weapon == 5:
+            self.missile_time = now
+            self.launch_missile()
+        elif now - self.missile_time > 500 and self.weapon == 4:
+            self.missile_time = now
+            SOUNDS[2].play()
+            SOUNDS[3].play()
+            self.launch_missile()
 
     def hit(self, mob):
         if type(mob) is not Asterroid:
@@ -503,16 +505,18 @@ class Player(pg.sprite.Sprite):
                 self.bombs = 3
 
     def set_power(self, now):
-        if now - self.power_time > 10000:
-            self.power_time = now
-            self.power_level -= 1
-            if self.power_level < 1:
-                self.power_level = 1
-            elif self.power_level > 7:
-                self.power_level = 7
-            if self.weapon > self.power_level:
-                self.weapon = self.power_level
-            SOUNDS[4].play()
+        if now - self.power_time < 10000:
+            return
+
+        self.power_time = now
+        self.power_level -= 1
+        if self.power_level < 1:
+            self.power_level = 1
+        elif self.power_level > 7:
+            self.power_level = 7
+        if self.weapon > self.power_level:
+            self.weapon = self.power_level
+        SOUNDS[4].play()
 
     def bomb(self):
         SOUNDS[8].play()
@@ -621,20 +625,22 @@ class MobBullet(pg.sprite.Sprite):
 
     def update(self):
         now = get_ticks()
-        if now - self.then > 20:
-            self.then = now
-            self.frame_nbr += 1
-            if self.frame_nbr == 4:
-                self.frame_nbr = 0
-            self.acc = vec(0, 0)
-            self.vel += self.acc
-            if self.vel.length() > MobBullet.MAX_SPEED:
-                self.vel.scale_to_length(MobBullet.MAX_SPEED)
-            self.pos += self.vel * game.dt // 10
-            if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
-                self.kill()
-            self.image = MobBullet.FRAMES[self.frame_nbr]
-            self.rect.center = self.pos
+        if now - self.then < 20:
+            return
+
+        self.then = now
+        self.frame_nbr += 1
+        if self.frame_nbr == 4:
+            self.frame_nbr = 0
+        self.acc = vec(0, 0)
+        self.vel += self.acc
+        if self.vel.length() > MobBullet.MAX_SPEED:
+            self.vel.scale_to_length(MobBullet.MAX_SPEED)
+        self.pos += self.vel * game.dt // 10
+        if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
+            self.kill()
+        self.image = MobBullet.FRAMES[self.frame_nbr]
+        self.rect.center = self.pos
 
 
 class MobMissile(pg.sprite.Sprite):
@@ -667,20 +673,22 @@ class MobMissile(pg.sprite.Sprite):
 
     def update(self):
         now = get_ticks()
-        if now - self.then > 20:
-            self.then = now
-            self.frame_nbr += 1
-            if self.frame_nbr == 4:
-                self.frame_nbr = 0
-            self.image = MobMissile.FRAMES[self.frame_nbr]
-            self.acc = self.seek(game.player.rect.center)
-            self.vel += self.acc
-            if self.vel.length() > MobMissile.MAX_SPEED:
-                self.vel.scale_to_length(MobMissile.MAX_SPEED)
-            self.pos += self.vel * game.dt // 10
-            if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
-                self.kill()
-            self.rect.center = self.pos
+        if now - self.then < 20:
+            return
+
+        self.then = now
+        self.frame_nbr += 1
+        if self.frame_nbr == 4:
+            self.frame_nbr = 0
+        self.image = MobMissile.FRAMES[self.frame_nbr]
+        self.acc = self.seek(game.player.rect.center)
+        self.vel += self.acc
+        if self.vel.length() > MobMissile.MAX_SPEED:
+            self.vel.scale_to_length(MobMissile.MAX_SPEED)
+        self.pos += self.vel * game.dt // 10
+        if not (0 <= self.pos.x <= WIDTH and 0 <= self.pos.y <= HEIGHT):
+            self.kill()
+        self.rect.center = self.pos
 
 
 class Asterroid(pg.sprite.Sprite):
@@ -706,13 +714,15 @@ class Asterroid(pg.sprite.Sprite):
 
     def rotate(self):
         now = get_ticks()
-        if now - self.rot_time > 50:
-            self.rot_time = now
-            self.rotation = (self.rotation + self.rot_speed) % 360
-            center = self.rect.center
-            self.image = pg.transform.rotate(self.image_copy, self.rotation)
-            self.rect = self.image.get_rect()
-            self.rect.center = center
+        if now - self.rot_time < 50:
+            return
+
+        self.rot_time = now
+        self.rotation = (self.rotation + self.rot_speed) % 360
+        center = self.rect.center
+        self.image = pg.transform.rotate(self.image_copy, self.rotation)
+        self.rect = self.image.get_rect()
+        self.rect.center = center
 
     def update(self):
         self.rotate()
@@ -748,20 +758,22 @@ class Explosion(pg.sprite.Sprite):
 
     def update(self):
         now = get_ticks()
-        if now - self.then > 1:
-            self.then = now
-            self.frame_nbr += 6
-            if self.frame_nbr == len(Explosion.METADATA['x']):
-                self.kill()
-                return
-            center = self.rect.center
-            self.image = Explosion.explosion_sheet.get_image_advanced((
-                Explosion.METADATA['x'][self.frame_nbr],
-                Explosion.METADATA['y'][self.frame_nbr],
-                100, 100
-            ), self.size)
-            self.rect = self.image.get_rect()
-            self.rect.center = center
+        if now - self.then < 1:
+            return
+
+        self.then = now
+        self.frame_nbr += 6
+        if self.frame_nbr == len(Explosion.METADATA['x']):
+            self.kill()
+            return
+        center = self.rect.center
+        self.image = Explosion.explosion_sheet.get_image_advanced((
+            Explosion.METADATA['x'][self.frame_nbr],
+            Explosion.METADATA['y'][self.frame_nbr],
+            100, 100
+        ), self.size)
+        self.rect = self.image.get_rect()
+        self.rect.center = center
 
 
 class Powerup(pg.sprite.Sprite):
