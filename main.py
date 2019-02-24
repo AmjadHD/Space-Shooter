@@ -55,10 +55,9 @@ class Game:
         self.wait_time = now
         self.wait = True
         self.blink_time = now
-        self.blink = False
+        self.blink = True
         self.current_track = 0
         self.rand_pos = randrange(40, HEIGHT // 3)
-        self.new_highscore = False
         self.restart = True
         self.player = Player()
 
@@ -107,6 +106,16 @@ class Game:
         self.draw_and_update()
 
     def start(self):
+        screen.fill(BLACK)
+        write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
+        write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
+              (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
+        write(screen, f'High Score: {self.highscore}', (WIDTH // 2, HEIGHT * 2 // 3),
+              aconcepto26, WHITE)
+        pg.display.flip()
+        text_rect = aconcepto26.get_rect("press any key")
+        text_rect.center = (WIDTH // 2, HEIGHT * 3 // 4)
+
         while True:
             clock.tick(15)
             self.play_music()
@@ -119,21 +128,16 @@ class Game:
                     pg.quit()
                     quit()
 
-            screen.fill(BLACK)
-            write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
-            write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                  (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
             now = get_ticks()
             if now - self.blink_time > 1000:
                 self.blink_time = now
-                self.blink = not self.blink
-            write(screen, f'High Score: {self.highscore}', (WIDTH // 2, HEIGHT * 2 // 3),
-                  aconcepto26, WHITE)
-            if self.blink:
-                write(screen, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
-                      aconcepto26, WHITE)
-
-            pg.display.flip()
+                if self.blink:
+                    self.blink = False
+                    aconcepto26.render_to(screen, text_rect, None, WHITE)
+                else:
+                    self.blink = True
+                    screen.fill(BLACK, text_rect)
+                pg.display.update(text_rect)
 
     def over(self):
         while self.game_over:
@@ -149,47 +153,56 @@ class Game:
                     pg.quit()
                     quit()
 
-            now = get_ticks()
-            if now - self.wait_time > 1500:
-                self.wait = False
             # initialisation:
             if self.restart:
                 ct = self.current_track
                 score = self.player.score
                 self.__init__()
-                if score > self.highscore:
-                    self.new_highscore = True
-                    self.highscore = score
-                    with open("highscore.txt", "w") as hsf:
-                        hsf.write(str(self.highscore))
 
                 self.game_over = True
                 self.restart = False
                 self.current_track = ct
-            # draw
-            screen.fill(BLACK)
-            write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
-            write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
-                  (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
+                # draw
+                screen.fill(BLACK)
+                write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
+                write(screen, "Use Arrows To Move Space Bar To Shoot And B To Bomb",
+                      (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
+                pg.display.flip()
+                font = aconcepto26
+                if score > self.highscore:
+                    self.highscore = score
+                    with open("highscore.txt", "w") as hsf:
+                        hsf.write(str(self.highscore))
+                    text = f"New High Score: {self.highscore}"
+                    text_rect1 = font.get_rect(text)
+                else:
+                    text = "Game Over"
+                    text_rect1 = font.get_rect(text)
+                text_rect1.center = (WIDTH // 2, HEIGHT // 3)
+                text_rect2 = font.get_rect("press any key")
+                text_rect2.center = (WIDTH // 2, HEIGHT * 3 // 4)
+                dirty_rects = (text_rect1, text_rect2)
+
+            now = get_ticks()
+            if now - self.wait_time > 1500:
+                self.wait = False
+
             if now - self.blink_time > 1000:
                 self.blink_time = now
-                self.blink = not self.blink
-            if self.blink:
-                if self.new_highscore:
-                    write(screen, f'New High Score: {self.highscore}',
-                          (WIDTH // 2, HEIGHT // 3), aconcepto26, WHITE)
+                if self.blink:
+                    self.blink = False
+                    font.render_to(screen, text_rect1, text, WHITE)
+                    font.render_to(screen, text_rect2, "press any key", WHITE)
                 else:
-                    write(screen, 'Game Over', (WIDTH // 2, HEIGHT // 3),
-                          aconcepto26, WHITE)
-                write(screen, 'press any key', (WIDTH // 2, HEIGHT * 3 // 4),
-                      aconcepto26, WHITE)
+                    self.blink = True
+                    screen.fill(BLACK, text_rect1)
+                    screen.fill(BLACK, text_rect2)
 
-            # update
-            pg.display.flip()
+                pg.display.update(dirty_rects)
 
     def pause(self):
         while self.paused:
-            clock.tick(15)
+            clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN:
@@ -198,12 +211,9 @@ class Game:
                         music_player.unpause()
                         screen.fill(BLACK)
                         pg.display.flip()
-                        return
                 elif event.type == pg.QUIT:
                     pg.quit()
                     quit()
-            write(screen, 'paused', (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
-            pg.display.flip()
 
     def handle_events(self):
         for event in pg.event.get():
@@ -211,6 +221,8 @@ class Game:
                 if event.key == pg.K_n:
                     self.paused = True
                     music_player.pause()
+                    write(screen, 'paused', (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
+                    pg.display.flip()
                 elif event.key == pg.K_w:
                     self.player.weapon += 1
                     if self.player.weapon > self.player.power_level:
@@ -235,12 +247,11 @@ class Game:
 
     def draw_title_bar(self):
         player = self.player
-        screen_blit = screen.blit
         screen.fill(BLACK, title_bar_rect)
         for i in range(player.lives):
-            screen_blit(mini_ship, ((WIDTH - 90) + 30 * i, 10))
+            screen.blit(mini_ship, ((WIDTH - 90) + 30 * i, 10))
         for i in range(player.bombs):
-            screen_blit(mini_bomb, (110 + 30 * i, 5))
+            screen.blit(mini_bomb, (110 + 30 * i, 5))
         write(screen, f'Score:{player.score}', (WIDTH // 2, 10), aconcepto20, WHITE)
         write(screen, f'weapon:{player.weapon}/{player.power_level}',
               (WIDTH * 3 // 4, 10), aconcepto14, RED)
