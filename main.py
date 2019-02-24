@@ -14,12 +14,14 @@ from utils import SpriteSheet, write, get_image  # type: ignore
 from settings import *  # type: ignore
 
 
+pg.mixer.pre_init(22050, -16, 1, 512)
 pg.init()
+
 screen = pg.display.set_mode((WIDTH, HEIGHT), pg.constants.DOUBLEBUF)
 screen.set_alpha(None)
 clock = pg.time.Clock()
-pg.display.set_caption(CAPTION)
 shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'shipsheet.png'))
+pg.display.set_caption(CAPTION)
 pg.display.set_icon(shipsheet.get_image((0, 192, 32, 50)))
 pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
