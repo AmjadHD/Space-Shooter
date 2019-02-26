@@ -17,12 +17,24 @@ from settings import *  # type: ignore
 pg.mixer.pre_init(22050, -16, 1, 512)
 pg.init()
 
+# set width and height relative to the device dimensions
+_info = pg.display.Info()
+WIDTH, HEIGHT = _info.current_w * 3 // 4, _info.current_h * 4 // 5
+del _info
+
+# the game screen
 screen = pg.display.set_mode((WIDTH, HEIGHT), pg.constants.DOUBLEBUF)
+# disable alpha for speedier blits
 screen.set_alpha(None)
+# the game clock
 clock = pg.time.Clock()
-shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'shipsheet.png'))
+# set the title of the window
 pg.display.set_caption(CAPTION)
+# the ship spritesheet
+shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'shipsheet.png'))
+# set the icon
 pg.display.set_icon(shipsheet.get_image((0, 192, 32, 50)))
+# restrict the allowed event for faster event handling
 pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
 title_bar_rect = (0, 0, WIDTH, 30)
