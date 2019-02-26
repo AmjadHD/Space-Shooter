@@ -569,10 +569,11 @@ class Bullet(pg.sprite.Sprite):
 
     __slots__ = ("direction",)
     image = get_image(join(IMAGES_FOLDER, 'guns', 'laser.png'))
+    image_copy = image.copy()
 
     def __init__(self, x, y, direction=0, rot=0):
         super(Bullet, self).__init__()
-        self.image = pg.transform.rotate(Bullet.image.copy(), rot)
+        self.image = pg.transform.rotate(Bullet.image_copy, rot)
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y
@@ -592,11 +593,11 @@ class Missile(pg.sprite.Sprite):
 
     MAX_SPEED = 18
     radius = 15
+    image_copy = image.copy()
 
     def __init__(self, center):
         super(Missile, self).__init__()
         self.center = center
-        self.image_copy = self.image.copy()
         self.rect = self.image.get_rect()
         self.target = choice(game.mobs.sprites())
         self.pos = vec(self.center)
