@@ -292,14 +292,10 @@ class Game:
                 Asterroid().add(self.all_sprites, self.mobs)
 
     def handle_collisions(self):
-        for mob in pg.sprite.groupcollide(self.mobs, self.bullets, False, True):
-            self.player.hit(mob)
-        for mob in pg.sprite.spritecollide(self.player, self.mobs, True):
-            self.player.get_hit(mob)
-        for powerup in pg.sprite.spritecollide(self.player, self.powerups, True):
-            self.player.get_powerup(powerup)
-        for mob_bullet in pg.sprite.spritecollide(self.player, self.mob_bullets, True):
-            self.player.get_hit(mob_bullet)
+        self.player.hit(pg.sprite.groupcollide(self.mobs, self.bullets, False, True))
+        self.player.get_hit(pg.sprite.spritecollide(self.player, self.mobs, True))
+        self.player.get_powerup(pg.sprite.spritecollide(self.player, self.powerups, True))
+        self.player.get_hit(pg.sprite.spritecollide(self.player, self.mob_bullets, True))
         self.player.set_power(self.now)
 
     def play_music(self):
@@ -469,74 +465,77 @@ class Player(pg.sprite.Sprite):
             SOUNDS[3].play()
             self.launch_missile()
 
-    def hit(self, mob):
-        if type(mob) is not Asterroid:
-            self.score += int(100 - mob.radius)
-        mob.shield -= 16
-        if mob.shield < 0:
-            mob.kill()
-            mx = max(mob.rect.width, mob.rect.height)
-            game.all_sprites.add(Explosion(mob.rect.center, (mx, mx)))
-            if 0.1 < game.rand < 0.4:
-                Asterroid().add(game.all_sprites, game.mobs)
-            elif game.rand > 0.8 and type(mob) is RoundMob:
-                Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
-            elif game.rand > 0.9 and isinstance(mob, (GreyMob, RedMob, EyeLikeMob)):
-                Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
-            elif game.rand > 0.99:
-                Powerup(mob.rect.center).add(game.all_sprites, game.powerups)
-        else:
-            mx = max(mob.rect.width // 2, mob.rect.height // 2)
-            game.all_sprites.add(Explosion(mob.rect.center, (mx, mx)))
-
-    def get_hit(self, object):
-        SOUNDS[4].play()
-        self.shield -= object.radius * 2
-        if self.weapon == self.power_level:
-            self.weapon -= 1
-            if self.weapon < 1:
-                self.weapon = 1
-        self.power_level -= 1
-        if self.power_level < 1:
-            self.power_level = 1
-        if not self.hidden:
-            mx = max(object.rect.width // 2, object.rect.height // 2)
-            game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
-        if self.shield <= 0:
-            self.shield = 100
-            if self.bombs < 1:
-                self.bombs = 1
-            game.all_sprites.add(Explosion(self.rect.center, (150, 150)))
-            self.lives -= 1
-            if self.lives > 0:
-                self.hide()
+    def hit(self, objects):
+        for object in objects:
+            if type(object) is not Asterroid:
+                self.score += int(100 - object.radius)
+            object.shield -= 16
+            if object.shield < 0:
+                object.kill()
+                mx = max(object.rect.width, object.rect.height)
+                game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
+                if 0.1 < game.rand < 0.4:
+                    Asterroid().add(game.all_sprites, game.mobs)
+                elif game.rand > 0.8 and type(object) is RoundMob:
+                    Powerup(object.rect.center).add(game.all_sprites, game.powerups)
+                elif game.rand > 0.9 and isinstance(object, (GreyMob, RedMob, EyeLikeMob)):
+                    Powerup(object.rect.center).add(game.all_sprites, game.powerups)
+                elif game.rand > 0.99:
+                    Powerup(object.rect.center).add(game.all_sprites, game.powerups)
             else:
-                self.lives = 0
-                self.kill()
-        if not self.lives:
-            game.game_over = True
-            game.restart = True
-            game.wait_time = get_ticks()
-            game.wait = True
+                mx = max(object.rect.width // 2, object.rect.height // 2)
+                game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
 
-    def get_powerup(self, powerup):
-        if powerup.type == 0:
-            SOUNDS[6].play()
-            self.power_level += 1
-            if self.power_level <= 7:
-                self.weapon += 1
-            self.power_time = get_ticks()
-        elif powerup.type == 1:
-            self.shield += randrange(10, 30)
-            self.power_time = get_ticks()
-            if self.shield >= 100:
+    def get_hit(self, objects):
+        for object in objects:
+            SOUNDS[4].play()
+            self.shield -= object.radius * 2
+            if self.weapon == self.power_level:
+                self.weapon -= 1
+                if self.weapon < 1:
+                    self.weapon = 1
+            self.power_level -= 1
+            if self.power_level < 1:
+                self.power_level = 1
+            if not self.hidden:
+                mx = max(object.rect.width // 2, object.rect.height // 2)
+                game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
+            if self.shield <= 0:
                 self.shield = 100
-        elif powerup.type == 2:
-            self.bombs += 1
-            if self.bombs < 0:
-                self.bombs = 0
-            elif self.bombs > 3:
-                self.bombs = 3
+                if self.bombs < 1:
+                    self.bombs = 1
+                game.all_sprites.add(Explosion(self.rect.center, (150, 150)))
+                self.lives -= 1
+                if self.lives > 0:
+                    self.hide()
+                else:
+                    self.lives = 0
+                    self.kill()
+            if not self.lives:
+                game.game_over = True
+                game.restart = True
+                game.wait_time = get_ticks()
+                game.wait = True
+
+    def get_powerup(self, powerups):
+        for powerup in powerups:
+            if powerup.type == 0:
+                SOUNDS[6].play()
+                self.power_level += 1
+                if self.power_level <= 7:
+                    self.weapon += 1
+                self.power_time = get_ticks()
+            elif powerup.type == 1:
+                self.shield += randrange(10, 30)
+                self.power_time = get_ticks()
+                if self.shield >= 100:
+                    self.shield = 100
+            elif powerup.type == 2:
+                self.bombs += 1
+                if self.bombs < 0:
+                    self.bombs = 0
+                elif self.bombs > 3:
+                    self.bombs = 3
 
     def set_power(self, now):
         if now - self.power_time < 10000:
