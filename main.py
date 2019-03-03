@@ -138,7 +138,7 @@ class Game:
         text_rect.center = (WIDTH // 2, HEIGHT * 3 // 4)
 
         while True:
-            clock.tick(15)
+            clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYUP:
@@ -162,7 +162,7 @@ class Game:
 
     def over(self):
         while self.game_over:
-            clock.tick(15)
+            clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYUP and not self.wait:
