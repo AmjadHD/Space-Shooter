@@ -295,8 +295,8 @@ class Game:
     def handle_collisions(self):
         self.player.hit(pg.sprite.groupcollide(self.mobs, self.bullets, False, True))
         self.player.get_hit(pg.sprite.spritecollide(self.player, self.mobs, True))
-        self.player.get_powerup(pg.sprite.spritecollide(self.player, self.powerups, True))
         self.player.get_hit(pg.sprite.spritecollide(self.player, self.mob_bullets, True))
+        self.player.get_powerup(pg.sprite.spritecollide(self.player, self.powerups, True))
         self.player.set_power(self.now)
 
     def play_music(self):

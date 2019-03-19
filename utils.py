@@ -2,6 +2,8 @@ import pygame as pg
 
 
 RLEACCEL = pg.constants.RLEACCEL
+
+
 class SpriteSheet:
     def __init__(self, filename):
         self.spritesheet = pg.image.load(filename).convert()
@@ -18,7 +20,7 @@ class SpriteSheet:
         return image
 
     def get_image_advanced(self, rect=None, size=None, colorkey=(0, 0, 0),
-                  horizontally=False, vertically=False, angle=0):
+                           horizontally=False, vertically=False, angle=0):
         if rect is not None:
             image = pg.Surface((rect[2], rect[3]))
             image.blit(self.spritesheet, (0, 0), rect)
@@ -37,6 +39,7 @@ def get_image(filename, colorkey=(0, 0, 0)):
     image = pg.image.load(filename).convert()
     image.set_colorkey(colorkey, RLEACCEL)
     return image
+
 
 def write(screen, text, center, font, color):
     '''A function that draws a text on the screen'''
