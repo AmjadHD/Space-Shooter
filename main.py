@@ -382,11 +382,6 @@ class Player(pg.sprite.Sprite):
             self.shoot()
         self.image = Player.FRAMES[self.flip][self.frame_nbr]
 
-    def hide(self):
-        self.hidden = True
-        self.hide_time = get_ticks()
-        self.rect.center = (2 * WIDTH, 2 * HEIGHT)
-
     def launch_missile(self):
         Missile((self.rect.left, self.rect.centery)).add(game.all_sprites, game.bullets)
         Missile((self.rect.right, self.rect.centery)).add(game.all_sprites, game.bullets)
@@ -508,7 +503,10 @@ class Player(pg.sprite.Sprite):
                 game.all_sprites.add(Explosion(self.rect.center, (150, 150)))
                 self.lives -= 1
                 if self.lives > 0:
-                    self.hide()
+                    # hide
+                    self.hidden = True
+                    self.hide_time = get_ticks()
+                    self.rect.center = (2 * WIDTH, 2 * HEIGHT)
                 else:
                     self.lives = 0
                     self.kill()
