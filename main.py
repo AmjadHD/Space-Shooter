@@ -2,7 +2,7 @@
 from math import cos
 from random import choice, random, randrange
 from glob import glob
-from os.path import join
+import os.path as osp
 
 import pygame as pg  # type: ignore
 from pygame.mixer import music as music_player  # type: ignore
@@ -39,7 +39,7 @@ pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
 title_bar_rect = (0, 0, WIDTH, 30)
 mini_ship = shipsheet.get_image_advanced((0, 192, 32, 50), (20, 20))
-mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'spaceMissiles_006.png')
+mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'bomb.png')
                         ).get_image_advanced(size=(15, 25))
 
 
@@ -50,7 +50,7 @@ def sound_iter():
         yield sound
 
 
-SOUNDS = tuple(sound_iter())
+SOUNDS = dict(sound_iter())
 del sound_iter
 # fonts
 aconcepto100 = SysFont("a_Concepto", 100)
@@ -395,18 +395,18 @@ class Player(pg.sprite.Sprite):
         if now - self.shoot_time > 250:
             self.shoot_time = now
             if self.weapon == 1:
-                SOUNDS[2].play()
+                SOUNDS["laser1"].play()
                 Bullet(self.rect.centerx, self.rect.top).add(
                     game.all_sprites, game.bullets)
             elif self.weapon == 2:
-                SOUNDS[3].play()
+                SOUNDS["laser2"].play()
                 Bullet(self.rect.left, self.rect.centery).add(
                     game.all_sprites, game.bullets)
                 Bullet(self.rect.right, self.rect.centery).add(
                     game.all_sprites, game.bullets)
             elif self.weapon == 3:
-                SOUNDS[2].play()
-                SOUNDS[3].play()
+                SOUNDS["laser1"].play()
+                SOUNDS["laser2"].play()
                 Bullet(self.rect.left, self.rect.centery, -1, 30).add(
                     game.all_sprites, game.bullets)
                 Bullet(self.rect.right, self.rect.centery, 1, -30).add(
@@ -414,8 +414,8 @@ class Player(pg.sprite.Sprite):
                 Bullet(self.rect.centerx, self.rect.top).add(
                     game.all_sprites, game.bullets)
             elif self.weapon == 5:
-                SOUNDS[2].play()
-                SOUNDS[3].play()
+                SOUNDS["laser1"].play()
+                SOUNDS["laser2"].play()
                 Bullet(self.rect.left, self.rect.centery).add(
                     game.all_sprites, game.bullets)
                 Bullet(self.rect.right, self.rect.centery).add(
@@ -423,8 +423,8 @@ class Player(pg.sprite.Sprite):
                 Bullet(self.rect.centerx, self.rect.top).add(
                     game.all_sprites, game.bullets)
             elif self.weapon == 6:
-                SOUNDS[2].play()
-                SOUNDS[3].play()
+                SOUNDS["laser1"].play()
+                SOUNDS["laser2"].play()
                 Bullet(self.rect.left, self.rect.centery).add(
                     game.all_sprites, game.bullets)
                 Bullet(self.rect.right, self.rect.centery).add(
@@ -436,8 +436,8 @@ class Player(pg.sprite.Sprite):
                 Bullet(self.rect.right, self.rect.centery, 1.2, -35).add(
                     game.all_sprites, game.bullets)
             elif self.weapon == 7:
-                SOUNDS[2].play()
-                SOUNDS[3].play()
+                SOUNDS["laser1"].play()
+                SOUNDS["laser2"].play()
                 self.launch_missile()
                 Bullet(self.rect.left, self.rect.centery, -0.6, 16).add(
                     game.all_sprites, game.bullets)
@@ -457,8 +457,8 @@ class Player(pg.sprite.Sprite):
             self.launch_missile()
         elif now - self.missile_time > 500 and self.weapon == 4:
             self.missile_time = now
-            SOUNDS[2].play()
-            SOUNDS[3].play()
+            SOUNDS["laser1"].play()
+            SOUNDS["laser2"].play()
             self.launch_missile()
 
     def hit(self, objects):
@@ -484,7 +484,7 @@ class Player(pg.sprite.Sprite):
 
     def get_hit(self, objects):
         for object in objects:
-            SOUNDS[4].play()
+            SOUNDS["powerdown"].play()
             self.shield -= object.radius * 2
             if self.weapon == self.power_level:
                 self.weapon -= 1
@@ -518,18 +518,18 @@ class Player(pg.sprite.Sprite):
 
     def get_powerup(self, powerups):
         for powerup in powerups:
-            if powerup.type == 0:
-                SOUNDS[6].play()
+            if powerup.type == "weapon":
+                SOUNDS["powerup"].play()
                 self.power_level += 1
                 if self.power_level <= 7:
                     self.weapon += 1
                 self.power_time = get_ticks()
-            elif powerup.type == 1:
+            elif powerup.type == "shield":
                 self.shield += randrange(10, 30)
                 self.power_time = get_ticks()
                 if self.shield >= 100:
                     self.shield = 100
-            elif powerup.type == 2:
+            elif powerup.type == "bomb":
                 self.bombs += 1
                 if self.bombs < 0:
                     self.bombs = 0
@@ -548,10 +548,10 @@ class Player(pg.sprite.Sprite):
             self.power_level = 7
         if self.weapon > self.power_level:
             self.weapon = self.power_level
-        SOUNDS[4].play()
+        SOUNDS["powerdown"].play()
 
     def bomb(self):
-        SOUNDS[8].play()
+        SOUNDS["bomb"].play()
         for mob in game.mobs:
             mob.shield -= 50
             if mob.shield < 0:
@@ -812,11 +812,12 @@ class Explosion(pg.sprite.Sprite):
 class Powerup(pg.sprite.Sprite):
     '''All the POWERUPS: shield, weapon...'''
 
-    POWERUPS = tuple(get_image(f) for f in glob(join(IMAGES_FOLDER, 'powerups', '*png')))
+    POWERUPS = {osp.basename(f).split('.')[0]: get_image(f)
+                for f in glob(join(IMAGES_FOLDER, 'powerups', '*png'))}
 
     def __init__(self, center):
         super(Powerup, self).__init__()
-        self.type = randrange(3)
+        self.type = ("bomb", "shield", "weapon")[randrange(3)]
         self.image = self.POWERUPS[self.type]
         self.rect = self.image.get_rect()
         self.rect.center = center
