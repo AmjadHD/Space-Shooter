@@ -18,9 +18,8 @@ pg.mixer.pre_init(22050, -16, 1, 512)
 pg.init()
 
 # set width and height relative to the device dimensions
-_info = pg.display.Info()
-WIDTH, HEIGHT = _info.current_w * 3 // 4, _info.current_h * 4 // 5
-del _info
+info = pg.display.Info()
+WIDTH, HEIGHT = info.current_w * 3 // 4, info.current_h * 4 // 5
 
 # the game screen
 screen = pg.display.set_mode((WIDTH, HEIGHT), pg.constants.DOUBLEBUF)
@@ -43,20 +42,20 @@ mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'bomb.png')
                         ).get_image_advanced(size=(15, 25))
 
 
-def sound_iter():
-    for f in glob(join(SOUNDS_FOLDER, 'sound_tracks', '**')):
-        sound = pg.mixer.Sound(f)
-        sound.set_volume(0.3)
-        yield sound
+SOUNDS = {}
+for f in glob(join(SOUNDS_FOLDER, 'sound_tracks', '**')):
+    sound = pg.mixer.Sound(f)
+    sound.set_volume(0.3)
+    SOUNDS[osp.basename(f).split('.')[0]] = sound
 
-
-SOUNDS = dict(sound_iter())
-del sound_iter
 # fonts
 aconcepto100 = SysFont("a_Concepto", 100)
 aconcepto26 = SysFont("a_Concepto", 26)
 aconcepto20 = SysFont("a_Concepto", 20)
 aconcepto14 = SysFont("a_Concepto", 14)
+
+# delete unused names
+del f, sound, info, SysFont, dirname
 
 
 # the game
