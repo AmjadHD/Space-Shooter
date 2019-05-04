@@ -69,9 +69,9 @@ class Game:
                 self.highscore = 0
         now = get_ticks()
         # game
-        self.running = True
-        self.game_over = False
-        self.paused = False
+        self.is_running = True
+        self.is_over = False
+        self.is_paused = False
 
         self.wait_time = now
         self.wait = True
@@ -161,12 +161,12 @@ class Game:
                 pg.display.update(text_rect)
 
     def over(self):
-        while self.game_over:
+        while self.is_over:
             clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYUP and not self.wait:
-                    self.game_over = False
+                    self.is_over = False
                     screen.fill(BLACK)
                     pg.display.flip()
                     return
@@ -180,7 +180,7 @@ class Game:
                 score = self.player.score
                 self.__init__()
 
-                self.game_over = True
+                self.is_over = True
                 self.restart = False
                 self.current_track = ct
                 # draw
@@ -222,13 +222,13 @@ class Game:
                 pg.display.update(dirty_rects)
 
     def pause(self):
-        while self.paused:
+        while self.is_paused:
             clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_n:
-                        self.paused = False
+                        self.is_paused = False
                         music_player.unpause()
                         screen.fill(BLACK)
                         pg.display.flip()
@@ -240,7 +240,7 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_n:
-                    self.paused = True
+                    self.is_paused = True
                     music_player.pause()
                     write(screen, 'paused', (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
                     pg.display.flip()
@@ -254,7 +254,7 @@ class Game:
                     self.player.bombs -= 1
                     self.player.bomb()
             elif event.type == pg.QUIT:
-                self.running = False
+                self.is_running = False
 
     def draw_and_update(self):
         self.all_sprites.clear(screen, lambda surf, rect: surf.fill(BLACK, rect))
@@ -510,7 +510,7 @@ class Player(pg.sprite.Sprite):
                     self.lives = 0
                     self.kill()
             if not self.lives:
-                game.game_over = True
+                game.is_over = True
                 game.restart = True
                 game.wait_time = get_ticks()
                 game.wait = True
@@ -1126,7 +1126,7 @@ class RoundMob(pg.sprite.Sprite):
 
 game = Game()
 game.start()
-while game.running:
+while game.is_running:
     game.run()
     game.pause()
     game.over()
