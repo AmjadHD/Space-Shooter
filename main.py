@@ -838,7 +838,7 @@ class Powerup(pg.sprite.Sprite):
 class GreyMob(pg.sprite.Sprite):
     '''elongated grey alienship'''
     image = SpriteSheet(join(IMAGES_FOLDER, "mobs", 'greymob.png')
-                        ).get_image_advanced(size=(100, 100))
+                        ).get_image_advanced(size=(61, 92))
     count = 0
     duration = get_ticks()
     next_time = duration
