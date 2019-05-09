@@ -464,7 +464,7 @@ class Player(pg.sprite.Sprite):
             object.shield -= 16
             if object.shield < 0:
                 object.kill()
-                mx = max(object.rect.width, object.rect.height)
+                mx = max(object.rect.size)
                 game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
                 if 0.1 < game.rand < 0.4:
                     Asterroid().add(game.all_sprites, game.mobs)
@@ -475,12 +475,13 @@ class Player(pg.sprite.Sprite):
                 elif game.rand > 0.99:
                     Powerup(object.rect.center).add(game.all_sprites, game.powerups)
             else:
-                mx = max(object.rect.width // 2, object.rect.height // 2)
+                mx = max(object.rect.size) // 2
                 game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
 
     def get_hit_by(self, objects):
+        play_powerdown = SOUNDS["powerdown"].play
         for object in objects:
-            SOUNDS["powerdown"].play()
+            play_powerdown()
             self.shield -= object.radius * 2
             if self.weapon == self.power_level:
                 self.weapon -= 1
@@ -489,9 +490,8 @@ class Player(pg.sprite.Sprite):
             self.power_level -= 1
             if self.power_level < 1:
                 self.power_level = 1
-            if not self.is_hidden:
-                mx = max(object.rect.width // 2, object.rect.height // 2)
-                game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
+            mx = max(object.rect.size) // 2
+            game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
             if self.shield <= 0:
                 self.shield = 100
                 if self.bombs < 1:
@@ -547,9 +547,9 @@ class Player(pg.sprite.Sprite):
         SOUNDS["bomb"].play()
         for mob in game.mobs:
             mob.shield -= 50
-            if mob.shield < 0:
+            if mob.shield <= 0:
                 mob.kill()
-                mx = max(mob.rect.width, mob.rect.height)
+                mx = max(mob.rect.size)
                 game.all_sprites.add(Explosion(mob.rect.center, (mx, mx)))
                 if type(mob) is not Asterroid:
                     self.score += 100 - mob.radius
