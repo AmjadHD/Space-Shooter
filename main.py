@@ -223,7 +223,7 @@ class Game:
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_n:
+                    if event.key == pg.K_ESCAPE:
                         music_player.unpause()
                         screen.fill(BLACK)
                         pg.display.flip()
@@ -235,7 +235,7 @@ class Game:
     def handle_events(self):
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_n:
+                if event.key == pg.K_ESCAPE:
                     music_player.pause()
                     write(screen, "paused", (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
                     pg.display.flip()
