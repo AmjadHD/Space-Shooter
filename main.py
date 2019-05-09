@@ -30,7 +30,7 @@ clock = pg.time.Clock()
 # set the title of the window
 pg.display.set_caption(CAPTION)
 # the ship spritesheet
-shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'shipsheet.png'))
+shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, "shipsheet.png"))
 # set the icon
 pg.display.set_icon(shipsheet.get_image((0, 192, 32, 50)))
 # restrict the allowed event for faster event handling
@@ -38,12 +38,12 @@ pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
 title_bar_rect = (0, 0, WIDTH, 30)
 mini_ship = shipsheet.get_image_advanced((0, 192, 32, 50), (20, 20))
-mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'bomb.png')
+mini_bomb = SpriteSheet(join(IMAGES_FOLDER, "powerups", "bomb.png")
                         ).get_image_advanced(size=(15, 25))
 
 
 SOUNDS = {}
-for f in glob(join(SOUNDS_FOLDER, 'sound_tracks', '**')):
+for f in glob(join(SOUNDS_FOLDER, "sound_tracks", "**")):
     sound = pg.mixer.Sound(f)
     sound.set_volume(0.3)
     SOUNDS[osp.basename(f).split('.')[0]] = sound
@@ -62,7 +62,7 @@ del f, sound, info, SysFont, dirname
 class Game:
 
     def __init__(self):
-        with open("highscore.txt", "r") as hsf:
+        with open("highscore.txt", 'r') as hsf:
             try:
                 self.highscore = int(hsf.read())
             except:
@@ -106,6 +106,7 @@ class Game:
     def play(self):
         self.wait_time = get_ticks()
         self.wait = True
+
         while self.is_playing:
             self.dt = clock.tick(FPS) // 2
             self.now = get_ticks()
@@ -129,9 +130,9 @@ class Game:
     def start(self):
         screen.fill(BLACK)
         write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
-        write(screen, 'Use Arrows To Move Space Bar To Shoot And B To Bomb',
+        write(screen, "Use Arrows To Move Space Bar To Shoot And B To Bomb",
               (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
-        write(screen, f'High Score: {self.highscore}', (WIDTH // 2, HEIGHT * 2 // 3),
+        write(screen, f"High Score: {self.highscore}", (WIDTH // 2, HEIGHT * 2 // 3),
               aconcepto26, WHITE)
         pg.display.flip()
         text_rect = aconcepto26.get_rect("press any key")
@@ -175,7 +176,7 @@ class Game:
         font = aconcepto26
         if score > self.highscore:
             self.highscore = score
-            with open("highscore.txt", "w") as hsf:
+            with open("highscore.txt", 'w') as hsf:
                 hsf.write(str(self.highscore))
             text = f"New High Score: {self.highscore}"
             text_rect1 = font.get_rect(text)
@@ -269,14 +270,14 @@ class Game:
             screen.blit(mini_ship, ((WIDTH - 90) + 30 * i, 10))
         for i in range(player.bombs):
             screen.blit(mini_bomb, (110 + 30 * i, 5))
-        write(screen, f'Score:{player.score}', (WIDTH // 2, 10), aconcepto20, WHITE)
-        write(screen, f'weapon:{player.weapon}/{player.power_level}',
+        write(screen, f"Score:{player.score}", (WIDTH // 2, 10), aconcepto20, WHITE)
+        write(screen, f"weapon:{player.weapon}/{player.power_level}",
               (WIDTH * 3 // 4, 10), aconcepto14, RED)
         color = RED if player.shield < 20 else (36, 218, 181)
         pg.draw.rect(screen, color, (0, 0, player.shield, 20))
         pg.draw.rect(screen, WHITE, (0, 0, 100, 20), 2)
         if player.shield > 0:
-            write(screen, f'{player.shield}%', (50, 10), aconcepto14, RED)
+            write(screen, f"{player.shield}%", (50, 10), aconcepto14, RED)
 
     def get_mobs(self):
         GreyMob.get(self.now)
@@ -306,7 +307,7 @@ class Game:
 
 # the sprites:
 class Player(pg.sprite.Sprite):
-    '''The spaceship sprite'''
+    """The spaceship sprite"""
 
     FRAMES = (tuple(shipsheet.get_image_advanced(((0, 32, 67, 99)[i], 192, (32, 32, 30, 30)[i], 50), (40, 63))
                     for i in range(4)),
@@ -555,10 +556,10 @@ class Player(pg.sprite.Sprite):
 
 
 class Bullet(pg.sprite.Sprite):
-    '''The player's lazer bullets'''
+    """The player's lazer bullets"""
 
     __slots__ = ("direction",)
-    image = get_image(join(IMAGES_FOLDER, 'guns', 'laser.png'))
+    image = get_image(join(IMAGES_FOLDER, "guns", "laser.png"))
     image_copy = image.copy()
 
     def __init__(self, x, y, direction=0, rot=0):
@@ -577,9 +578,9 @@ class Bullet(pg.sprite.Sprite):
 
 
 class Missile(pg.sprite.Sprite):
-    '''The player's guided missiles'''
+    """The player's guided missiles"""
 
-    image = get_image(join(IMAGES_FOLDER, 'guns', 'missile.png'))
+    image = get_image(join(IMAGES_FOLDER, "guns", "missile.png"))
 
     MAX_SPEED = 18
     radius = 15
@@ -620,9 +621,9 @@ class Missile(pg.sprite.Sprite):
 
 
 class MobBullet(pg.sprite.Sprite):
-    '''The mob's bullets'''
+    """The mob's bullets"""
 
-    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
+    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "mobsheet.png")
                                ).get_image_advanced(
         (x, 640, 32, 32), (16, 16)) for x in (0, 32, 64, 128))
     image = FRAMES[0]
@@ -669,9 +670,9 @@ class MobBullet(pg.sprite.Sprite):
 
 
 class MobMissile(pg.sprite.Sprite):
-    '''The mob's guided missiles'''
+    """The mob's guided missiles"""
 
-    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
+    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "mobsheet.png")
                                ).get_image((x, 0, 16, 40)) for x in (0, 16, 32, 48))
     image = FRAMES[0]
     MAX_SPEED = 6
@@ -691,7 +692,7 @@ class MobMissile(pg.sprite.Sprite):
 
     def seek(self, target):
         desired = (target - self.pos).normalize() * MobMissile.MAX_SPEED
-        steer = (desired - self.vel)
+        steer = desired - self.vel
         if steer.length() > 0.4:
             steer.scale_to_length(0.4)
         return steer
@@ -717,9 +718,9 @@ class MobMissile(pg.sprite.Sprite):
 
 
 class Asterroid(pg.sprite.Sprite):
-    '''The rocks floating in the space'''
+    """The rocks floating in the space"""
 
-    METEORS = tuple(get_image(f, WHITE) for f in glob(join(IMAGES_FOLDER, 'meteors', '*png')))
+    METEORS = tuple(get_image(f, WHITE) for f in glob(join(IMAGES_FOLDER, "meteors", "*png")))
 
     def __init__(self):
         super(Asterroid, self).__init__()
@@ -762,14 +763,14 @@ class Asterroid(pg.sprite.Sprite):
 
 
 class Explosion(pg.sprite.Sprite):
-    '''A class for all types of explosions'''
+    """A class for all types of explosions"""
 
-    explosion_sheet = SpriteSheet(join(SPRITESHEETS_FOLDER, 'explsheet.png'))
+    explosion_sheet = SpriteSheet(join(SPRITESHEETS_FOLDER, "explsheet.png"))
     METADATA = {
-        'x': tuple(j * 100 for i in range(8) for j in range(9)),
-        'y': tuple(i * 100 for i in range(8) for j in range(9)),
-        'width': 100,
-        'height': 100
+        "x": tuple(j * 100 for i in range(8) for j in range(9)),
+        "y": tuple(i * 100 for i in range(8) for j in range(9)),
+        "width": 100,
+        "height": 100
     }
 
     def __init__(self, center, size):
@@ -788,13 +789,13 @@ class Explosion(pg.sprite.Sprite):
 
         self.then = now
         self.frame_nbr += 6
-        if self.frame_nbr == len(Explosion.METADATA['x']):
+        if self.frame_nbr == len(Explosion.METADATA["x"]):
             self.kill()
             return
         center = self.rect.center
         self.image = Explosion.explosion_sheet.get_image_advanced((
-            Explosion.METADATA['x'][self.frame_nbr],
-            Explosion.METADATA['y'][self.frame_nbr],
+            Explosion.METADATA["x"][self.frame_nbr],
+            Explosion.METADATA["y"][self.frame_nbr],
             100, 100
         ), self.size)
         self.rect = self.image.get_rect()
@@ -802,10 +803,10 @@ class Explosion(pg.sprite.Sprite):
 
 
 class Powerup(pg.sprite.Sprite):
-    '''All the POWERUPS: shield, weapon...'''
+    """All the powerups: shield, weapon..."""
 
-    POWERUPS = {osp.basename(f).split('.')[0]: get_image(f)
-                for f in glob(join(IMAGES_FOLDER, 'powerups', '*png'))}
+    POWERUPS = {osp.basename(f).split(".")[0]: get_image(f)
+                for f in glob(join(IMAGES_FOLDER, "powerups", "*png"))}
 
     def __init__(self, center):
         super(Powerup, self).__init__()
@@ -829,8 +830,9 @@ class Powerup(pg.sprite.Sprite):
 
 
 class GreyMob(pg.sprite.Sprite):
-    '''elongated grey alienship'''
-    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", 'greymob.png')
+    """elongated grey alienship"""
+
+    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", "greymob.png")
                         ).get_image_advanced(size=(61, 92))
     count = 0
     duration = get_ticks()
@@ -912,8 +914,8 @@ class GreyMob(pg.sprite.Sprite):
 
 
 class RedMob(pg.sprite.Sprite):
-    '''The elongted red alienship'''
-    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", 'redmob.png')
+    """The elongted red alienship"""
+    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", "redmob.png")
                         ).get_image_advanced(size=(58, 100))
     count = 0
     duration = get_ticks()
@@ -976,9 +978,9 @@ class RedMob(pg.sprite.Sprite):
 
 
 class EyeLikeMob(pg.sprite.Sprite):
-    '''The eye-like alienship'''
+    """The eye-like alienship"""
 
-    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'eyelike_mobsheet.png')
+    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "eyelike_mobsheet.png")
                                ).get_image(((0, 31, 63, 95, 127, 175, 223, 270)[i],
                                             0, (31, 32, 32, 32, 48, 48, 48, 48)[i], 80))
                    for i in range(8))
@@ -1032,9 +1034,9 @@ class EyeLikeMob(pg.sprite.Sprite):
 
 
 class RoundMob(pg.sprite.Sprite):
-    '''The round alienship'''
+    """The round alienship"""
 
-    FRAMES = tuple(tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, 'mobsheet.png')
+    FRAMES = tuple(tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "mobsheet.png")
                                      ).get_image(
         ((0, 95, 190, 285, 385, 480, 575)[i],
          y,
@@ -1074,14 +1076,14 @@ class RoundMob(pg.sprite.Sprite):
                 MobBullet(self.rect.center).add(game.all_sprites, game.mob_bullets)
 
     def seek_with_approach(self, target):
-        desired = (target - self.pos)
+        desired = target - self.pos
         dist = desired.length()
         desired.normalize_ip()
         if dist < RoundMob.APPROACH_RADIUS:
             desired *= dist / RoundMob.APPROACH_RADIUS * RoundMob.MAX_SPEED
         else:
             desired *= RoundMob.MAX_SPEED
-        steer = (desired - self.vel)
+        steer = desired - self.vel
         if steer.length() > RoundMob.STEER_FORCE:
             steer.scale_to_length(RoundMob.STEER_FORCE)
         return steer
