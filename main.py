@@ -1,8 +1,6 @@
 # Space Shooter game by Amjad Ben Hedhili
 from math import cos
 from random import choice, random, randrange
-from glob import glob
-import os.path as osp
 
 import pygame as pg  # type: ignore
 from pygame.mixer import music as music_player  # type: ignore
@@ -30,7 +28,7 @@ clock = pg.time.Clock()
 # set the title of the window
 pg.display.set_caption(CAPTION)
 # the ship spritesheet
-shipsheet = SpriteSheet(join(SPRITESHEETS_FOLDER, "shipsheet.png"))
+shipsheet = SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "shipsheet.png"))
 # set the icon
 pg.display.set_icon(shipsheet.get_image((0, 192, 32, 50)))
 # restrict the allowed event for faster event handling
@@ -38,25 +36,25 @@ pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
 title_bar_rect = (0, 0, WIDTH, 30)
 mini_ship = shipsheet.get_image_advanced((0, 192, 32, 50), (20, 20))
-mini_bomb = SpriteSheet(join(IMAGES_FOLDER, "powerups", "bomb.png")
+mini_bomb = SpriteSheet(osp.join(IMAGES_FOLDER, "powerups", "bomb.png")
                         ).get_image_advanced(size=(15, 25))
 
 
 SOUNDS = {}
-for f in glob(join(SOUNDS_FOLDER, "sound_tracks", "**")):
+for f in glob(osp.join(SOUNDS_FOLDER, "sound_tracks", "**")):
     sound = pg.mixer.Sound(f)
     sound.set_volume(0.3)
     SOUNDS[osp.basename(f).split('.')[0]] = sound
 
 # fonts
-font_file = join(GAME_FOLDER, "fonts", "a_Concepto.ttf")
+font_file = osp.join(GAME_FOLDER, "fonts", "a_Concepto.ttf")
 aconcepto100 = Font(font_file, 100)
 aconcepto26 = Font(font_file, 26)
 aconcepto20 = Font(font_file, 20)
 aconcepto14 = Font(font_file, 14)
 
 # delete unused names
-del f, font_file, sound, info, Font, dirname
+del f, font_file, sound, info, Font
 
 
 # the game
@@ -560,7 +558,7 @@ class Bullet(pg.sprite.Sprite):
     """The player's lazer bullets"""
 
     __slots__ = ("direction",)
-    image = get_image(join(IMAGES_FOLDER, "guns", "laser.png"))
+    image = get_image(osp.join(IMAGES_FOLDER, "guns", "laser.png"))
     image_copy = image.copy()
 
     def __init__(self, x, y, direction=0, rot=0):
@@ -581,7 +579,7 @@ class Bullet(pg.sprite.Sprite):
 class Missile(pg.sprite.Sprite):
     """The player's guided missiles"""
 
-    image = get_image(join(IMAGES_FOLDER, "guns", "missile.png"))
+    image = get_image(osp.join(IMAGES_FOLDER, "guns", "missile.png"))
 
     MAX_SPEED = 18
     radius = 15
@@ -624,7 +622,7 @@ class Missile(pg.sprite.Sprite):
 class MobBullet(pg.sprite.Sprite):
     """The mob's bullets"""
 
-    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "mobsheet.png")
+    FRAMES = tuple(SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "mobsheet.png")
                                ).get_image_advanced(
         (x, 640, 32, 32), (16, 16)) for x in (0, 32, 64, 128))
     image = FRAMES[0]
@@ -673,7 +671,7 @@ class MobBullet(pg.sprite.Sprite):
 class MobMissile(pg.sprite.Sprite):
     """The mob's guided missiles"""
 
-    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "mobsheet.png")
+    FRAMES = tuple(SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "mobsheet.png")
                                ).get_image((x, 0, 16, 40)) for x in (0, 16, 32, 48))
     image = FRAMES[0]
     MAX_SPEED = 6
@@ -721,7 +719,7 @@ class MobMissile(pg.sprite.Sprite):
 class Asterroid(pg.sprite.Sprite):
     """The rocks floating in the space"""
 
-    METEORS = tuple(get_image(f, WHITE) for f in glob(join(IMAGES_FOLDER, "meteors", "*png")))
+    METEORS = tuple(get_image(f, WHITE) for f in glob(osp.join(IMAGES_FOLDER, "meteors", "*png")))
 
     def __init__(self):
         super(Asterroid, self).__init__()
@@ -766,7 +764,7 @@ class Asterroid(pg.sprite.Sprite):
 class Explosion(pg.sprite.Sprite):
     """A class for all types of explosions"""
 
-    explosion_sheet = SpriteSheet(join(SPRITESHEETS_FOLDER, "explsheet.png"))
+    explosion_sheet = SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "explsheet.png"))
     METADATA = {
         "x": tuple(j * 100 for i in range(8) for j in range(9)),
         "y": tuple(i * 100 for i in range(8) for j in range(9)),
@@ -807,7 +805,7 @@ class Powerup(pg.sprite.Sprite):
     """All the powerups: shield, weapon..."""
 
     POWERUPS = {osp.basename(f).split(".")[0]: get_image(f)
-                for f in glob(join(IMAGES_FOLDER, "powerups", "*png"))}
+                for f in glob(osp.join(IMAGES_FOLDER, "powerups", "*png"))}
 
     def __init__(self, center):
         super(Powerup, self).__init__()
@@ -833,7 +831,7 @@ class Powerup(pg.sprite.Sprite):
 class GreyMob(pg.sprite.Sprite):
     """elongated grey alienship"""
 
-    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", "greymob.png")
+    image = SpriteSheet(osp.join(IMAGES_FOLDER, "mobs", "greymob.png")
                         ).get_image_advanced(size=(61, 92))
     count = 0
     duration = get_ticks()
@@ -916,7 +914,7 @@ class GreyMob(pg.sprite.Sprite):
 
 class RedMob(pg.sprite.Sprite):
     """The elongted red alienship"""
-    image = SpriteSheet(join(IMAGES_FOLDER, "mobs", "redmob.png")
+    image = SpriteSheet(osp.join(IMAGES_FOLDER, "mobs", "redmob.png")
                         ).get_image_advanced(size=(58, 100))
     count = 0
     duration = get_ticks()
@@ -981,7 +979,7 @@ class RedMob(pg.sprite.Sprite):
 class EyeLikeMob(pg.sprite.Sprite):
     """The eye-like alienship"""
 
-    FRAMES = tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "eyelike_mobsheet.png")
+    FRAMES = tuple(SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "eyelike_mobsheet.png")
                                ).get_image(((0, 31, 63, 95, 127, 175, 223, 270)[i],
                                             0, (31, 32, 32, 32, 48, 48, 48, 48)[i], 80))
                    for i in range(8))
@@ -1037,7 +1035,7 @@ class EyeLikeMob(pg.sprite.Sprite):
 class RoundMob(pg.sprite.Sprite):
     """The round alienship"""
 
-    FRAMES = tuple(tuple(SpriteSheet(join(SPRITESHEETS_FOLDER, "mobsheet.png")
+    FRAMES = tuple(tuple(SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "mobsheet.png")
                                      ).get_image(
         ((0, 95, 190, 285, 385, 480, 575)[i],
          y,
