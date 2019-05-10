@@ -32,6 +32,7 @@ shipsheet = SpriteSheet(osp.join(SPRITESHEETS_FOLDER, "shipsheet.png"))
 # set the icon
 pg.display.set_icon(shipsheet.get_image((0, 192, 32, 50)))
 # restrict the allowed event for faster event handling
+pg.event.set_allowed(None)
 pg.event.set_allowed((pg.KEYDOWN, pg.KEYUP, pg.QUIT))
 
 title_bar_rect = (0, 0, WIDTH, 30)
