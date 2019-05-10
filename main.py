@@ -69,9 +69,7 @@ class Game:
                 self.highscore = 0
         now = get_ticks()
         # game
-        self.is_running = True
-        self.is_over = False
-        self.is_paused = False
+        self.is_playing = True
 
         self.wait_time = now
         self.wait = True
@@ -79,7 +77,6 @@ class Game:
         self.blink = True
         self.current_track = 0
         self.rand_pos = randrange(40, HEIGHT // 3)
-        self.restart = True
         self.player = Player()
 
         # grey mob
@@ -106,25 +103,28 @@ class Game:
         self.bullets = pg.sprite.Group()
         self.mob_bullets = pg.sprite.Group()
 
-    def run(self):
-        self.dt = clock.tick(FPS) // 2
-        self.now = get_ticks()
-        self.rand = random()
+    def play(self):
+        self.wait_time = get_ticks()
+        self.wait = True
+        while self.is_playing:
+            self.dt = clock.tick(FPS) // 2
+            self.now = get_ticks()
+            self.rand = random()
 
-        # play music
-        self.play_music()
+            # play music
+            self.play_music()
 
-        # handle events
-        self.handle_events()
+            # handle events
+            self.handle_events()
 
-        # collisions:
-        self.handle_collisions()
+            # collisions:
+            self.handle_collisions()
 
-        # mobs stuff
-        self.get_mobs()
+            # mobs stuff
+            self.get_mobs()
 
-        # draw and update everything on the screen
-        self.draw_and_update()
+            # draw and update everything on the screen
+            self.draw_and_update()
 
     def start(self):
         screen.fill(BLACK)
@@ -161,48 +161,43 @@ class Game:
                 pg.display.update(text_rect)
 
     def over(self):
-        while self.is_over:
+        ct = self.current_track
+        score = self.player.score
+        self.__init__()
+
+        self.current_track = ct
+        # draw
+        screen.fill(BLACK)
+        write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
+        write(screen, "Use Arrows To Move Space Bar To Shoot And B To Bomb",
+              (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
+        pg.display.flip()
+        font = aconcepto26
+        if score > self.highscore:
+            self.highscore = score
+            with open("highscore.txt", "w") as hsf:
+                hsf.write(str(self.highscore))
+            text = f"New High Score: {self.highscore}"
+            text_rect1 = font.get_rect(text)
+        else:
+            text = "Game Over"
+            text_rect1 = font.get_rect(text)
+        text_rect1.center = (WIDTH // 2, HEIGHT // 3)
+        text_rect2 = font.get_rect("press any key")
+        text_rect2.center = (WIDTH // 2, HEIGHT * 3 // 4)
+        dirty_rects = (text_rect1, text_rect2)
+
+        while True:
             clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYUP and not self.wait:
-                    self.is_over = False
                     screen.fill(BLACK)
                     pg.display.flip()
                     return
                 elif event.type == pg.QUIT:
                     pg.quit()
                     quit()
-
-            # initialisation:
-            if self.restart:
-                ct = self.current_track
-                score = self.player.score
-                self.__init__()
-
-                self.is_over = True
-                self.restart = False
-                self.current_track = ct
-                # draw
-                screen.fill(BLACK)
-                write(screen, "Space Shooter", (WIDTH // 2, HEIGHT // 4), aconcepto26, WHITE)
-                write(screen, "Use Arrows To Move Space Bar To Shoot And B To Bomb",
-                      (WIDTH // 2, HEIGHT // 2), aconcepto14, WHITE)
-                pg.display.flip()
-                font = aconcepto26
-                if score > self.highscore:
-                    self.highscore = score
-                    with open("highscore.txt", "w") as hsf:
-                        hsf.write(str(self.highscore))
-                    text = f"New High Score: {self.highscore}"
-                    text_rect1 = font.get_rect(text)
-                else:
-                    text = "Game Over"
-                    text_rect1 = font.get_rect(text)
-                text_rect1.center = (WIDTH // 2, HEIGHT // 3)
-                text_rect2 = font.get_rect("press any key")
-                text_rect2.center = (WIDTH // 2, HEIGHT * 3 // 4)
-                dirty_rects = (text_rect1, text_rect2)
 
             now = get_ticks()
             if now - self.wait_time > 1500:
@@ -222,16 +217,16 @@ class Game:
                 pg.display.update(dirty_rects)
 
     def pause(self):
-        while self.is_paused:
+        while True:
             clock.tick(10)
             self.play_music()
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_n:
-                        self.is_paused = False
                         music_player.unpause()
                         screen.fill(BLACK)
                         pg.display.flip()
+                        return
                 elif event.type == pg.QUIT:
                     pg.quit()
                     quit()
@@ -240,10 +235,10 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_n:
-                    self.is_paused = True
                     music_player.pause()
-                    write(screen, 'paused', (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
+                    write(screen, "paused", (WIDTH // 2, HEIGHT // 2), aconcepto100, WHITE)
                     pg.display.flip()
+                    self.pause()
                 elif event.key == pg.K_w:
                     self.player.weapon += 1
                     if self.player.weapon > self.player.power_level:
@@ -254,7 +249,8 @@ class Game:
                     self.player.bombs -= 1
                     self.player.bomb()
             elif event.type == pg.QUIT:
-                self.is_running = False
+                pg.quit()
+                quit()
 
     def draw_and_update(self):
         self.all_sprites.clear(screen, lambda surf, rect: surf.fill(BLACK, rect))
@@ -331,7 +327,7 @@ class Player(pg.sprite.Sprite):
         self.power_level = 1
         self.weapon = 1
         self.bombs = 1
-        self.hidden = False
+        self.is_hidden = False
         self.flip = False
         self.open_fire = True
         self.shoot_time = get_ticks()
@@ -341,9 +337,9 @@ class Player(pg.sprite.Sprite):
         self.hide_time = self.shoot_time
 
     def update(self):
-        if self.hidden and get_ticks() - self.hide_time > 1500:
+        if self.is_hidden and get_ticks() - self.hide_time > 1500:
             self.bomb()
-            self.hidden = False
+            self.is_hidden = False
             self.rect.centerx = WIDTH // 2
             self.rect.bottom = HEIGHT - 10
         key_state = pg.key.get_pressed()
@@ -387,7 +383,7 @@ class Player(pg.sprite.Sprite):
         Missile((self.rect.centerx, self.rect.top)).add(game.all_sprites, game.bullets)
 
     def shoot(self):
-        if self.hidden:
+        if self.is_hidden:
             return
 
         now = get_ticks()
@@ -481,7 +477,7 @@ class Player(pg.sprite.Sprite):
                 mx = max(object.rect.width // 2, object.rect.height // 2)
                 game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
 
-    def get_hit(self, objects):
+    def get_hit_by(self, objects):
         for object in objects:
             SOUNDS["powerdown"].play()
             self.shield -= object.radius * 2
@@ -492,7 +488,7 @@ class Player(pg.sprite.Sprite):
             self.power_level -= 1
             if self.power_level < 1:
                 self.power_level = 1
-            if not self.hidden:
+            if not self.is_hidden:
                 mx = max(object.rect.width // 2, object.rect.height // 2)
                 game.all_sprites.add(Explosion(object.rect.center, (mx, mx)))
             if self.shield <= 0:
@@ -503,17 +499,14 @@ class Player(pg.sprite.Sprite):
                 self.lives -= 1
                 if self.lives > 0:
                     # hide
-                    self.hidden = True
+                    self.is_hidden = True
                     self.hide_time = get_ticks()
                     self.rect.center = (2 * WIDTH, 2 * HEIGHT)
                 else:
                     self.lives = 0
                     self.kill()
             if not self.lives:
-                game.is_over = True
-                game.restart = True
-                game.wait_time = get_ticks()
-                game.wait = True
+                game.is_playing = False
 
     def get_powerup(self, powerups):
         for powerup in powerups:
@@ -1126,7 +1119,6 @@ class RoundMob(pg.sprite.Sprite):
 
 game = Game()
 game.start()
-while game.is_running:
-    game.run()
-    game.pause()
+while True:
+    game.play()
     game.over()
