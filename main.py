@@ -8,7 +8,7 @@ import pygame as pg  # type: ignore
 from pygame.mixer import music as music_player  # type: ignore
 from pygame.math import Vector2 as vec  # type: ignore
 from pygame.time import get_ticks  # type: ignore
-from pygame.freetype import SysFont  # type: ignore
+from pygame.freetype import Font  # type: ignore
 
 from utils import SpriteSheet, write, get_image  # type: ignore
 from settings import *  # type: ignore
@@ -49,13 +49,14 @@ for f in glob(join(SOUNDS_FOLDER, "sound_tracks", "**")):
     SOUNDS[osp.basename(f).split('.')[0]] = sound
 
 # fonts
-aconcepto100 = SysFont("a_Concepto", 100)
-aconcepto26 = SysFont("a_Concepto", 26)
-aconcepto20 = SysFont("a_Concepto", 20)
-aconcepto14 = SysFont("a_Concepto", 14)
+font_file = join(GAME_FOLDER, "fonts", "a_Concepto.ttf")
+aconcepto100 = Font(font_file, 100)
+aconcepto26 = Font(font_file, 26)
+aconcepto20 = Font(font_file, 20)
+aconcepto14 = Font(font_file, 14)
 
 # delete unused names
-del f, sound, info, SysFont, dirname
+del f, font_file, sound, info, Font, dirname
 
 
 # the game
