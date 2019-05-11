@@ -29,7 +29,16 @@ title_bar_rect = (0, 0, WIDTH, 30)
 mini_ship = shipsheet.get_image_advanced((0, 192, 32, 50), (20, 20))
 mini_bomb = SpriteSheet(join(IMAGES_FOLDER, 'powerups', 'spaceMissiles_006.png')
                         ).get_image_advanced(size=(15, 25))
-SOUNDS = tuple(pg.mixer.Sound(f) for f in glob(join(SOUNDS_FOLDER, 'sound_tracks', '**')))
+
+def sound_iter():
+    for f in glob(join(SOUNDS_FOLDER, 'sound_tracks', '**')):
+        sound = pg.mixer.Sound(f)
+        sound.set_volume(0.3)
+        yield sound
+
+
+SOUNDS = tuple(sound_iter())
+del sound_iter
 # fonts
 aconcepto100 = SysFont("a_Concepto", 100)
 aconcepto26 = SysFont("a_Concepto", 26)
